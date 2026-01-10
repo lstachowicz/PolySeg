@@ -1,0 +1,32 @@
+# Qt
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+Makefile*
+*.o
+*.so
+*.a
+
+# Build directories
+build/
+build-*/
+debug/
+release/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Executables
+PolySeg
+LabelForAi
+
+# OS
+.DS_Store
+Thumbs.db
