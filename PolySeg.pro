@@ -11,11 +11,15 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    superlabel.cpp
+    polygoncanvas.cpp \
+    projectconfig.cpp \
+    projectsettingsdialog.cpp
 
 HEADERS += \
     mainwindow.h \
-    superlabel.h
+    polygoncanvas.h \
+    projectconfig.h \
+    projectsettingsdialog.h
 
 FORMS += \
     mainwindow.ui
