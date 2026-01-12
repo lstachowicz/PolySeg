@@ -9,6 +9,7 @@ Makefile*
 *.o
 *.so
 *.a
+.qmake.stash
 
 # Build directories
 build/
@@ -25,7 +26,6 @@ release/
 
 # Executables
 PolySeg
-LabelForAi
 
 # OS
 .DS_Store

@@ -1,0 +1,6 @@
+# User's custom plugins - not tracked in repository
+# Place your personal AI plugins here
+
+*
+!.gitignore
+!README.md

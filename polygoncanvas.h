@@ -1,5 +1,5 @@
-#ifndef SUPERLABEL_H
-#define SUPERLABEL_H
+#ifndef POLYGONCANVAS_H
+#define POLYGONCANVAS_H
 
 #include <QLabel>
 #include <QPoint>
@@ -14,23 +14,36 @@ struct Polygon
     bool is_selected = false;
 };
 
-class SuperLabel : public QLabel
+class PolygonCanvas : public QLabel
 {
     Q_OBJECT
 
 public:
-    explicit SuperLabel(QWidget *parent=nullptr);
+    explicit PolygonCanvas(QWidget *parent=nullptr);
 
     void Increase();
     void Decrease();
+    void ResetZoom();
     
     QVector<Polygon> GetPolygons() const { return polygons_; }
     QSize GetOriginalImageSize() const;
     void ExportYolo(const QString& filename, int class_id = 0);
+    void LoadYoloAnnotations(const QString& filepath, const QVector<QColor>& class_colors);
+    void ClearAllPolygons();
     
     void StartNewPolygon(int class_id = 0, QColor color = Qt::red);
     void FinishCurrentPolygon();
     void ClearCurrentPolygon();
+    
+    // Plugin integration
+    void AddPolygonFromPlugin(const QVector<QPoint>& points, int class_id, const QColor& color);
+    QPixmap GetPixmap() const { return pixmap(); }
+    
+    // Selection & Editing
+    void SelectPolygon(const QPoint& pos);
+    void DeselectAll();
+    void DeleteSelectedPolygon();
+    int GetSelectedPolygonIndex() const { return selected_polygon_index_; }
 
 protected:
     void mouseMoveEvent(QMouseEvent *ev) override;
@@ -64,4 +77,4 @@ private:
     float scalar_ = 1.0;
 };
 
-#endif // SUPERLABEL_H
+#endif // POLYGONCANVAS_H
