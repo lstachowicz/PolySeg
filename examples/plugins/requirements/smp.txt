@@ -1,0 +1,15 @@
+# Segmentation Models PyTorch (SMP) Requirements
+# License: MIT ✅
+
+segmentation-models-pytorch>=0.3.3
+torch>=1.13.0
+torchvision>=0.14.0
+opencv-python>=4.7.0
+numpy>=1.23.0
+pillow>=9.0.0
+albumentations>=1.3.0
+timm>=0.9.0
+
+# Optional: For additional encoders
+# pretrainedmodels>=0.7.4
+# efficientnet-pytorch>=0.7.1

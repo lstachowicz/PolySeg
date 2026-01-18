@@ -1,0 +1,30 @@
+PolySeg - AI-Powered Polygon Segmentation Tool
+Copyright (c) 2026 Lukasz Stachowicz
+
+This software is licensed under the MIT License.
+See LICENSE file for details.
+
+================================================================================
+
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+
+This application incorporates components from the projects listed below.
+The original copyright notices and licenses are provided below.
+
+================================================================================
+
+Qt Framework (v6.8.0)
+Copyright (C) The Qt Company Ltd.
+Licensed under GNU Lesser General Public License v3 (LGPL v3)
+
+Qt is dynamically linked to this application. Users are free to replace
+Qt libraries with compatible versions under the terms of LGPL v3.
+
+Full license text: https://www.gnu.org/licenses/lgpl-3.0.html
+Source code: https://code.qt.io/cgit/qt/
+
+================================================================================
+
+For complete third-party license information, see THIRD-PARTY-LICENSES.md
+
+================================================================================
