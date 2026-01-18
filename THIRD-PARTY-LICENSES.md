@@ -55,10 +55,10 @@ The following tools are used during development but are not distributed with the
 
 PolySeg's MIT License is fully compatible with Qt's LGPL v3 license through dynamic linking. This combination allows:
 
-✅ PolySeg source code remains MIT  
-✅ Qt libraries remain LGPL  
-✅ Users can freely use, modify, and distribute PolySeg  
-✅ Users can replace Qt libraries with different versions  
+- PolySeg source code remains MIT  
+- Qt libraries remain LGPL  
+- Users can freely use, modify, and distribute PolySeg  
+- Users can replace Qt libraries with different versions  
 
 ---
 
@@ -79,10 +79,10 @@ To comply with LGPL v3 requirements:
 
 If you use AI plugins with this application, those plugins may have their own licenses:
 
-- **YOLACT** - MIT License (compatible ✅)
-- **SAM (Segment Anything)** - Apache 2.0 (compatible ✅)
-- **Detectron2** - Apache 2.0 (compatible ✅)
-- **SMP (Segmentation Models PyTorch)** - MIT License (compatible ✅)
+- **YOLACT** - MIT License (compatible)
+- **SAM (Segment Anything)** - Apache 2.0 (compatible)
+- **Detectron2** - Apache 2.0 (compatible)
+- **SMP (Segmentation Models PyTorch)** - MIT License (compatible)
 
 Plugins are separate processes (subprocess communication) and do not affect PolySeg's licensing.
 

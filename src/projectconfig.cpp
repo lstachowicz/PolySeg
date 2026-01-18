@@ -12,6 +12,7 @@
 PluginConfig::PluginConfig()
     : enabled(false),
       name("AI Plugin"),
+      env_setup(""),
       command("python3"),
       script_path(""),
       detect_args(""),
@@ -24,6 +25,7 @@ QJsonObject PluginConfig::ToJson() const
   QJsonObject obj;
   obj["enabled"] = enabled;
   obj["name"] = name;
+  obj["env_setup"] = env_setup;
   obj["command"] = command;
   obj["script_path"] = script_path;
   obj["detect_args"] = detect_args;
@@ -44,6 +46,7 @@ PluginConfig PluginConfig::FromJson(const QJsonObject& json)
   PluginConfig pc;
   pc.enabled = json["enabled"].toBool(false);
   pc.name = json["name"].toString("AI Plugin");
+  pc.env_setup = json["env_setup"].toString("");
   pc.command = json["command"].toString("python3");
   pc.script_path = json["script_path"].toString("");
   pc.detect_args = json["detect_args"].toString("");
@@ -54,8 +57,91 @@ PluginConfig PluginConfig::FromJson(const QJsonObject& json)
   {
     pc.settings[it.key()] = it.value().toString();
   }
+  
+  // Set defaults if not present
+  if (!pc.settings.contains("base_model"))
+  {
+    pc.settings["base_model"] = "";
+  }
+  if (!pc.settings.contains("model"))
+  {
+    pc.settings["model"] = "";
+  }
 
   return pc;
+}
+
+// CropConfig implementation
+CropConfig::CropConfig()
+    : enabled(false),
+      x(0),
+      y(0),
+      width(0),
+      height(0)
+{
+}
+
+QJsonObject CropConfig::ToJson() const
+{
+  QJsonObject obj;
+  obj["enabled"] = enabled;
+  obj["x"] = x;
+  obj["y"] = y;
+  obj["width"] = width;
+  obj["height"] = height;
+  return obj;
+}
+
+CropConfig CropConfig::FromJson(const QJsonObject& json)
+{
+  CropConfig cc;
+  cc.enabled = json["enabled"].toBool(false);
+  cc.x = json["x"].toInt(0);
+  cc.y = json["y"].toInt(0);
+  cc.width = json["width"].toInt(0);
+  cc.height = json["height"].toInt(0);
+  return cc;
+}
+
+// ImportPathConfig implementation
+ImportPathConfig::ImportPathConfig()
+    : base_path(""),
+      skip_folders(QStringList() << "BMP" << "Dane_Surowe")
+{
+}
+
+QJsonObject ImportPathConfig::ToJson() const
+{
+  QJsonObject obj;
+  obj["base_path"] = base_path;
+  QJsonArray arr;
+  for (const QString& folder : skip_folders)
+  {
+    arr.append(folder);
+  }
+  obj["skip_folders"] = arr;
+  return obj;
+}
+
+ImportPathConfig ImportPathConfig::FromJson(const QJsonObject& json)
+{
+  ImportPathConfig ipc;
+  ipc.base_path = json["base_path"].toString("");
+  
+  QJsonArray arr = json["skip_folders"].toArray();
+  ipc.skip_folders.clear();
+  for (const QJsonValue& val : arr)
+  {
+    ipc.skip_folders.append(val.toString());
+  }
+  
+  // If no skip_folders in JSON, use defaults
+  if (ipc.skip_folders.isEmpty())
+  {
+    ipc.skip_folders << "BMP" << "Dane_Surowe";
+  }
+  
+  return ipc;
 }
 
 // SplitConfig implementation
@@ -146,6 +232,7 @@ ProjectConfig::ProjectConfig()
     : version_("1.0"),
       project_name_("Untitled Project"),
       project_directory_(""),
+      annotation_type_(AnnotationType::Polygon),
       next_class_id_(0),
       total_images_(0),
       labeled_images_(0),
@@ -298,6 +385,7 @@ QJsonObject ProjectConfig::ToJson() const
   QJsonObject obj;
   obj["version"] = version_;
   obj["name"] = project_name_;
+  obj["annotation_type"] = (annotation_type_ == AnnotationType::Polygon) ? "polygon" : "boundingbox";
   obj["modified"] = QDateTime::currentDateTime().toString(Qt::ISODate);
 
   QJsonArray classes_array;
@@ -317,6 +405,12 @@ QJsonObject ProjectConfig::ToJson() const
   stats["total_polygons"] = total_polygons_;
   obj["statistics"] = stats;
 
+  // Image Crop Configuration
+  obj["crop_config"] = crop_config_.ToJson();
+
+  // Import Path Configuration
+  obj["import_path_config"] = import_path_config_.ToJson();
+
   // Train/Val/Test Splits
   obj["split_config"] = split_config_.ToJson();
 
@@ -334,6 +428,8 @@ QJsonObject ProjectConfig::ToJson() const
     models_array.append(mv.ToJson());
   }
   obj["model_versions"] = models_array;
+  
+  std::cout << "ToJson: Serializing " << model_versions_.size() << " model versions" << std::endl;
 
   return obj;
 }
@@ -342,6 +438,9 @@ void ProjectConfig::FromJson(const QJsonObject& json)
 {
   version_ = json["version"].toString("1.0");
   project_name_ = json["name"].toString("Untitled Project");
+
+  QString anno_type = json["annotation_type"].toString("polygon");
+  annotation_type_ = (anno_type == "boundingbox") ? AnnotationType::BoundingBox : AnnotationType::Polygon;
 
   classes_.clear();
   QJsonArray classes_array = json["classes"].toArray();
@@ -373,6 +472,18 @@ void ProjectConfig::FromJson(const QJsonObject& json)
   labeled_images_ = stats["labeled_images"].toInt(0);
   total_polygons_ = stats["total_polygons"].toInt(0);
 
+  // Load crop configuration
+  if (json.contains("crop_config"))
+  {
+    crop_config_ = CropConfig::FromJson(json["crop_config"].toObject());
+  }
+
+  // Load import path configuration
+  if (json.contains("import_path_config"))
+  {
+    import_path_config_ = ImportPathConfig::FromJson(json["import_path_config"].toObject());
+  }
+
   // Load split configuration
   if (json.contains("split_config"))
   {
@@ -394,6 +505,8 @@ void ProjectConfig::FromJson(const QJsonObject& json)
   {
     model_versions_.append(ModelVersion::FromJson(model_val.toObject()));
   }
+  
+  std::cout << "FromJson: Loaded " << model_versions_.size() << " model versions" << std::endl;
 
   std::cout << "Loaded project: " << project_name_.toStdString() << " with " << classes_.size()
             << " classes" << std::endl;
@@ -494,18 +607,21 @@ void ProjectConfig::GenerateSplitFiles(const QString& project_dir)
   {
     QString filename = it.key();
     QString split = it.value();
+    
+    // Use absolute path for plugin compatibility
+    QString full_path = project_dir + "/images/" + filename;
 
     if (split == "train")
     {
-      train_images.append("images/" + filename);
+      train_images.append(full_path);
     }
     else if (split == "val")
     {
-      val_images.append("images/" + filename);
+      val_images.append(full_path);
     }
     else if (split == "test")
     {
-      test_images.append("images/" + filename);
+      test_images.append(full_path);
     }
   }
 
@@ -584,6 +700,9 @@ int ProjectConfig::GetTestCount() const
 void ProjectConfig::AddModelVersion(const ModelVersion& model)
 {
   model_versions_.append(model);
+  std::cout << "Added model version: " << model.name.toStdString() 
+            << " (path=" << model.path.toStdString() << ")" << std::endl;
+  std::cout << "Total models in config: " << model_versions_.size() << std::endl;
 }
 
 void ProjectConfig::RemoveModelVersion(int index)
@@ -600,4 +719,35 @@ void ProjectConfig::UpdateModelVersion(int index, const ModelVersion& model)
   {
     model_versions_[index] = model;
   }
+}
+
+void ProjectConfig::ResetAllSplits()
+{
+  // Archive old models directory
+  if (!project_directory_.isEmpty())
+  {
+    QString models_dir = project_directory_ + "/models";
+    QDir dir(models_dir);
+    if (dir.exists() && !dir.isEmpty())
+    {
+      QString timestamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
+      QString archive_name = project_directory_ + "/models_old_" + timestamp;
+      dir.rename(models_dir, archive_name);
+      dir.mkpath(models_dir);  // Create new empty models directory
+    }
+  }
+
+  // Generate new salt UUID
+  split_config_.hash_salt = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+  // Clear all assignments
+  image_splits_.clear();
+
+  // Model versions list will be kept but old models are archived
+}
+
+QStringList ProjectConfig::GetImageFiles() const
+{
+  // Return all images that have split assignments
+  return image_splits_.keys();
 }

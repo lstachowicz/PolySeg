@@ -25,6 +25,7 @@ struct PluginConfig
 {
   bool enabled;
   QString name;         // Plugin display name (e.g., "AI Detector")
+  QString env_setup;    // Environment setup command (e.g., "source venv/bin/activate")
   QString command;      // Command to execute (e.g., "python3")
   QString script_path;  // Path to plugin script (e.g., "./plugins/detector_plugin.py")
   QString detect_args;  // Arguments for detection (e.g., "detect --model {model} --image {image}
@@ -35,6 +36,31 @@ struct PluginConfig
   PluginConfig();
   QJsonObject ToJson() const;
   static PluginConfig FromJson(const QJsonObject& json);
+};
+
+// Image crop configuration (for preprocessing during import)
+struct CropConfig
+{
+  bool enabled;
+  int x;       // Top-left X coordinate
+  int y;       // Top-left Y coordinate
+  int width;   // Crop width (0 = use full image width)
+  int height;  // Crop height (0 = use full image height)
+
+  CropConfig();
+  QJsonObject ToJson() const;
+  static CropConfig FromJson(const QJsonObject& json);
+};
+
+// Import path configuration for generating file prefixes
+struct ImportPathConfig
+{
+  QString base_path;           // Base path to strip (e.g., "/home/user/Images")
+  QStringList skip_folders;    // Folders to skip in remaining path (e.g., ["BMP", "Dane_Surowe"])
+  
+  ImportPathConfig();
+  QJsonObject ToJson() const;
+  static ImportPathConfig FromJson(const QJsonObject& json);
 };
 
 // Train/Val/Test split configuration
@@ -65,6 +91,13 @@ struct ModelVersion
   static ModelVersion FromJson(const QJsonObject& json);
 };
 
+// Annotation type
+enum class AnnotationType
+{
+  Polygon,
+  BoundingBox
+};
+
 class ProjectConfig
 {
  public:
@@ -84,6 +117,9 @@ class ProjectConfig
 
   QString GetProjectName() const { return project_name_; }
   void SetProjectName(const QString& name) { project_name_ = name; }
+
+  AnnotationType GetAnnotationType() const { return annotation_type_; }
+  void SetAnnotationType(AnnotationType type) { annotation_type_ = type; }
 
   QString GetVersion() const { return version_; }
 
@@ -116,10 +152,23 @@ class ProjectConfig
   void SetSplitConfig(const SplitConfig& config) { split_config_ = config; }
   bool IsSplitEnabled() const { return split_config_.enabled; }
 
+  // Image Crop Management
+  CropConfig& GetCropConfig() { return crop_config_; }
+  const CropConfig& GetCropConfig() const { return crop_config_; }
+  void SetCropConfig(const CropConfig& config) { crop_config_ = config; }
+  bool IsCropEnabled() const { return crop_config_.enabled; }
+
+  // Import Path Management
+  ImportPathConfig& GetImportPathConfig() { return import_path_config_; }
+  const ImportPathConfig& GetImportPathConfig() const { return import_path_config_; }
+  void SetImportPathConfig(const ImportPathConfig& config) { import_path_config_ = config; }
+
   const QMap<QString, QString>& GetImageSplits() const { return image_splits_; }
   QString GetImageSplit(const QString& filename) const;
   void SetImageSplit(const QString& filename, const QString& split);
   void ClearImageSplits() { image_splits_.clear(); }
+  void ResetAllSplits();
+  QStringList GetImageFiles() const;
 
   QString DeterministicSplitForImage(const QString& filename) const;
   void UpdateImageSplits(const QStringList& all_images);
@@ -139,6 +188,7 @@ class ProjectConfig
   QString version_;
   QString project_name_;
   QString project_directory_;
+  AnnotationType annotation_type_;
   QVector<ProjectClass> classes_;
   int next_class_id_;
   PluginConfig plugin_config_;
@@ -147,6 +197,12 @@ class ProjectConfig
   int total_images_;
   int labeled_images_;
   int total_polygons_;
+
+  // Image Crop Configuration
+  CropConfig crop_config_;
+
+  // Import Path Configuration
+  ImportPathConfig import_path_config_;
 
   // Train/Val/Test Splits
   SplitConfig split_config_;

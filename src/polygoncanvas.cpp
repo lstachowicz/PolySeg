@@ -49,6 +49,14 @@ inline float DistanceFromPointToSegment(const QPoint& point, const QPoint& lineS
   return sqrt(distX * distX + distY * distY);
 }
 
+// Clamp point to image bounds
+inline QPoint ClampToImageBounds(const QPoint& point, const QSize& imageSize)
+{
+  int x = qBound(0, point.x(), imageSize.width() - 1);
+  int y = qBound(0, point.y(), imageSize.height() - 1);
+  return QPoint(x, y);
+}
+
 PolygonCanvas::PolygonCanvas(QWidget* parent) : QLabel(parent)
 {
   // Initialize with default color for first polygon
@@ -106,11 +114,20 @@ void PolygonCanvas::FinishCurrentPolygon()
 {
   if (current_polygon_.points.size() >= 3)
   {
+    SaveState();  // Save state before adding polygon
     polygons_.push_back(current_polygon_);
-    std::cout << "Finished polygon with " << current_polygon_.points.size() << " points"
-              << std::endl;
+    
+    // Keep class_id and color for next polygon, only clear points
+    int saved_class_id = current_polygon_.class_id;
+    QColor saved_color = current_polygon_.color;
     current_polygon_.points.clear();
+    current_polygon_.class_id = saved_class_id;
+    current_polygon_.color = saved_color;
+    current_polygon_.is_selected = false;
+    
+    emit PolygonsChanged();
     repaint();
+    std::cout << "Polygon finished and saved. Click to start next polygon or press Esc to stop." << std::endl;
   }
   else
   {
@@ -121,19 +138,36 @@ void PolygonCanvas::FinishCurrentPolygon()
 void PolygonCanvas::ClearCurrentPolygon()
 {
   current_polygon_.points.clear();
+  current_polygon_.class_id = -1;  // Exit drawing mode
+  emit CurrentClassChanged(-1);
   repaint();
-  std::cout << "Cleared current polygon" << std::endl;
+  std::cout << "Drawing cancelled" << std::endl;
 }
 
 void PolygonCanvas::mouseMoveEvent(QMouseEvent* ev)
 {
   auto pos = ev->pos() / scalar_;
+  
+  // Clamp position to image bounds
+  QPixmap pix = pixmap();
+  if (!pix.isNull())
+  {
+    pos = ClampToImageBounds(pos, pix.size());
+  }
+  
   active_point_pos_ = pos;
 }
 
 void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
+  
+  // Clamp position to image bounds
+  QPixmap pix = pixmap();
+  if (!pix.isNull())
+  {
+    pos = ClampToImageBounds(pos, pix.size());
+  }
 
   // Check if editing current polygon being drawn
   for (const auto& point : current_polygon_.points)
@@ -164,21 +198,67 @@ void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 void PolygonCanvas::mouseReleaseEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
+  
+  // Clamp position to image bounds
+  QPixmap pix = pixmap();
+  if (!pix.isNull())
+  {
+    pos = ClampToImageBounds(pos, pix.size());
+  }
+
+  // Right click finishes current polygon
+  if (ev->button() == Qt::RightButton)
+  {
+    if (!current_polygon_.points.isEmpty())
+    {
+      FinishCurrentPolygon();
+      return;
+    }
+  }
 
   if (!active_point_.isNull())
   {
+    // Save state before modifying polygon
+    if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+    {
+      SaveState();
+    }
     HandlePointDrag(pos);
   }
   else
   {
-    // If currently drawing, add point to current polygon
-    if (!current_polygon_.points.isEmpty())
+    bool ctrl_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+    
+    // If we have a selected polygon and not pressing Ctrl, add point to end
+    if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() && !ctrl_pressed)
+    {
+      SaveState();
+      polygons_[selected_polygon_index_].points.push_back(pos);
+      emit PolygonsChanged();
+      repaint();
+      std::cout << "✓ Added point to selected polygon (total: " 
+                << polygons_[selected_polygon_index_].points.size() << " points)" << std::endl;
+    }
+    // If Ctrl is pressed with selected polygon, insert point on edge
+    else if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() && ctrl_pressed)
     {
       HandlePointInsertion(pos);
     }
+    // If currently drawing, add point to current polygon
+    else if (!current_polygon_.points.isEmpty())
+    {
+      current_polygon_.points.push_back(pos);
+      repaint();
+    }
+    // If polygon mode is active (class_id set) but no points yet, add first point
+    else if (current_polygon_.class_id >= 0)
+    {
+      current_polygon_.points.push_back(pos);
+      std::cout << "Added first point to new polygon" << std::endl;
+    }
     else
     {
-      // Not drawing - try to select a polygon
+      // Not drawing and no active polygon - try to select a polygon
       SelectPolygon(pos);
     }
   }
@@ -208,6 +288,22 @@ void PolygonCanvas::keyPressEvent(QKeyEvent* ev)
   else if (ev->key() == Qt::Key_Delete)
   {
     DeleteSelectedPolygon();
+  }
+  else if (ev->matches(QKeySequence::Undo))  // Ctrl+Z
+  {
+    Undo();
+  }
+  else if (ev->matches(QKeySequence::Redo))  // Ctrl+Y or Ctrl+Shift+Z
+  {
+    Redo();
+  }
+  else if (ev->matches(QKeySequence::Copy))  // Ctrl+C
+  {
+    CopySelectedPolygon();
+  }
+  else if (ev->matches(QKeySequence::Paste))  // Ctrl+V
+  {
+    PastePolygon();
   }
   else
   {
@@ -277,8 +373,9 @@ QSize PolygonCanvas::GetOriginalImageSize() const
   return QSize(0, 0);
 }
 
-void PolygonCanvas::ExportYolo(const QString& filename, int class_id)
+void PolygonCanvas::ExportAnnotations(const QString& filename, int class_id)
 {
+  (void)class_id;
   QFile file(filename);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
   {
@@ -319,7 +416,7 @@ void PolygonCanvas::ExportYolo(const QString& filename, int class_id)
   std::cout << "Polygons: " << polygons_.size() << std::endl;
 }
 
-void PolygonCanvas::LoadYoloAnnotations(const QString& filepath,
+void PolygonCanvas::LoadAnnotations(const QString& filepath,
                                         const QVector<QColor>& class_colors)
 {
   QFile file(filepath);
@@ -403,9 +500,14 @@ void PolygonCanvas::LoadYoloAnnotations(const QString& filepath,
 
 void PolygonCanvas::ClearAllPolygons()
 {
+  if (!polygons_.isEmpty())
+  {
+    SaveState();  // Save state before clearing
+  }
   polygons_.clear();
   current_polygon_.points.clear();
   selected_polygon_index_ = -1;
+  emit PolygonsChanged();
   update();
 }
 
@@ -424,6 +526,7 @@ void PolygonCanvas::AddPolygonFromPlugin(const QVector<QPoint>& points, int clas
   polygon.is_selected = false;
 
   polygons_.append(polygon);
+  emit PolygonsChanged();
   update();
 
   std::cout << "Added plugin polygon with " << points.size() << " points (class_id=" << class_id
@@ -493,9 +596,11 @@ void PolygonCanvas::DeleteSelectedPolygon()
 {
   if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
   {
+    SaveState();  // Save state before deleting
     std::cout << "Deleting polygon " << selected_polygon_index_ << std::endl;
     polygons_.removeAt(selected_polygon_index_);
     selected_polygon_index_ = -1;
+    emit PolygonsChanged();
     update();
   }
 }
@@ -531,6 +636,15 @@ int PolygonCanvas::FindNearestSegmentIndex(const QPoint& position) const
 
 void PolygonCanvas::HandlePointDrag(const QPoint& position)
 {
+  QPoint clamped_pos = position;
+  
+  // Clamp position to image bounds
+  QPixmap pix = pixmap();
+  if (!pix.isNull())
+  {
+    clamped_pos = ClampToImageBounds(position, pix.size());
+  }
+
   // Try editing current polygon first
   for (int i = 0; i < current_polygon_.points.size(); ++i)
   {
@@ -565,6 +679,7 @@ void PolygonCanvas::HandlePointDrag(const QPoint& position)
         {
           polygon.points[i] = position;
         }
+        emit PolygonsChanged();
         return;
       }
     }
@@ -573,6 +688,15 @@ void PolygonCanvas::HandlePointDrag(const QPoint& position)
 
 void PolygonCanvas::HandlePointInsertion(const QPoint& position)
 {
+  QPoint clamped_pos = position;
+  
+  // Clamp position to image bounds
+  QPixmap pix = pixmap();
+  if (!pix.isNull())
+  {
+    clamped_pos = ClampToImageBounds(position, pix.size());
+  }
+
   bool ctrl_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
 
   // If Ctrl is pressed and we have a selected polygon, try to insert point
@@ -589,7 +713,7 @@ void PolygonCanvas::HandlePointInsertion(const QPoint& position)
       {
         int next_i = (i + 1) % polygon.points.size();
         float distance =
-            DistanceFromPointToSegment(position, polygon.points[i], polygon.points[next_i]);
+            DistanceFromPointToSegment(clamped_pos, polygon.points[i], polygon.points[next_i]);
 
         if (distance < min_distance)
         {
@@ -600,9 +724,16 @@ void PolygonCanvas::HandlePointInsertion(const QPoint& position)
 
       if (insert_index != -1 && min_distance < 10.0f)
       {
-        polygon.points.insert(polygon.points.begin() + insert_index, position);
-        std::cout << "Inserted point at index: " << insert_index << " in selected polygon"
-                  << std::endl;
+        SaveState();  // Save state before inserting point
+        polygon.points.insert(polygon.points.begin() + insert_index, clamped_pos);
+        emit PolygonsChanged();
+        repaint();
+        std::cout << "✓ Inserted point at index " << insert_index << std::endl;
+        return;
+      }
+      else
+      {
+        std::cout << "✗ Click closer to polygon edge to insert point (Ctrl+Click)" << std::endl;
         return;
       }
     }
@@ -611,16 +742,16 @@ void PolygonCanvas::HandlePointInsertion(const QPoint& position)
   // Otherwise add to current polygon
   if (ctrl_pressed && current_polygon_.points.size() > 1)
   {
-    int insert_index = FindNearestSegmentIndex(position);
+    int insert_index = FindNearestSegmentIndex(clamped_pos);
     if (insert_index != -1)
     {
-      current_polygon_.points.insert(current_polygon_.points.begin() + insert_index, position);
+      current_polygon_.points.insert(current_polygon_.points.begin() + insert_index, clamped_pos);
       std::cout << "Inserted at index: " << insert_index << std::endl;
     }
   }
   else
   {
-    current_polygon_.points.push_back(position);
+    current_polygon_.points.push_back(clamped_pos);
   }
 }
 
@@ -688,3 +819,105 @@ void PolygonCanvas::DrawClosingSegment(QPainter& painter)
 
   painter.drawLine(first * scalar_, last * scalar_);
 }
+
+// ============================================================================
+// Undo/Redo System
+// ============================================================================
+
+void PolygonCanvas::SaveState()
+{
+  // Save current state to undo stack
+  undo_stack_.push(polygons_);
+
+  // Limit stack size
+  if (undo_stack_.size() > MAX_UNDO_HISTORY)
+  {
+    undo_stack_.removeFirst();
+  }
+
+  // Clear redo stack when new action is performed
+  ClearRedoStack();
+}
+
+void PolygonCanvas::ClearRedoStack()
+{
+  redo_stack_.clear();
+}
+
+void PolygonCanvas::Undo()
+{
+  if (undo_stack_.isEmpty())
+  {
+    return;
+  }
+
+  // Save current state to redo stack
+  redo_stack_.push(polygons_);
+
+  // Restore previous state
+  polygons_ = undo_stack_.pop();
+
+  // Clear selection
+  selected_polygon_index_ = -1;
+
+  emit PolygonsChanged();
+  repaint();
+}
+
+void PolygonCanvas::Redo()
+{
+  if (redo_stack_.isEmpty())
+  {
+    return;
+  }
+
+  // Save current state to undo stack
+  undo_stack_.push(polygons_);
+
+  // Restore next state
+  polygons_ = redo_stack_.pop();
+
+  // Clear selection
+  selected_polygon_index_ = -1;
+
+  emit PolygonsChanged();
+  repaint();
+}
+
+// ============================================================================
+// Copy/Paste System
+// ============================================================================
+
+void PolygonCanvas::CopySelectedPolygon()
+{
+  if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+  {
+    clipboard_polygon_ = polygons_[selected_polygon_index_];
+    std::cout << "Polygon copied to clipboard (" << clipboard_polygon_.points.size() 
+              << " points)" << std::endl;
+  }
+}
+
+void PolygonCanvas::PastePolygon()
+{
+  if (clipboard_polygon_.points.isEmpty())
+  {
+    std::cout << "Clipboard is empty" << std::endl;
+    return;
+  }
+
+  // Save state for undo
+  SaveState();
+
+  // Create new polygon from clipboard (exact copy, no offset)
+  Polygon new_polygon = clipboard_polygon_;
+  new_polygon.is_selected = false;
+
+  polygons_.push_back(new_polygon);
+
+  std::cout << "Polygon pasted (" << new_polygon.points.size() << " points)" << std::endl;
+
+  emit PolygonsChanged();
+  repaint();
+}
+

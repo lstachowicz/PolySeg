@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QPoint>
 #include <QVector>
+#include <QStack>
 
 struct Polygon
 {
@@ -27,8 +28,8 @@ class PolygonCanvas : public QLabel
 
   QVector<Polygon> GetPolygons() const { return polygons_; }
   QSize GetOriginalImageSize() const;
-  void ExportYolo(const QString& filename, int class_id = 0);
-  void LoadYoloAnnotations(const QString& filepath, const QVector<QColor>& class_colors);
+  void ExportAnnotations(const QString& filename, int class_id = 0);
+  void LoadAnnotations(const QString& filepath, const QVector<QColor>& class_colors);
   void ClearAllPolygons();
 
   void StartNewPolygon(int class_id = 0, QColor color = Qt::red);
@@ -44,6 +45,21 @@ class PolygonCanvas : public QLabel
   void DeselectAll();
   void DeleteSelectedPolygon();
   int GetSelectedPolygonIndex() const { return selected_polygon_index_; }
+
+  // Undo/Redo
+  void Undo();
+  void Redo();
+  bool CanUndo() const { return !undo_stack_.isEmpty(); }
+  bool CanRedo() const { return !redo_stack_.isEmpty(); }
+
+  // Copy/Paste
+  void CopySelectedPolygon();
+  void PastePolygon();
+  bool HasClipboard() const { return clipboard_polygon_.points.size() > 0; }
+
+ signals:
+  void PolygonsChanged();
+  void CurrentClassChanged(int class_id);
 
  protected:
   void mouseMoveEvent(QMouseEvent* ev) override;
@@ -68,6 +84,10 @@ class PolygonCanvas : public QLabel
   static constexpr int POINT_DRAW_SIZE = 5;
   static constexpr int LINE_WIDTH = 1;
 
+  // State management helpers
+  void SaveState();
+  void ClearRedoStack();
+
   // Member variables
   QVector<Polygon> polygons_;
   Polygon current_polygon_;
@@ -75,6 +95,14 @@ class PolygonCanvas : public QLabel
   QPoint active_point_;
   QPoint active_point_pos_;
   float scalar_ = 1.0;
+
+  // Undo/Redo stacks
+  QStack<QVector<Polygon>> undo_stack_;
+  QStack<QVector<Polygon>> redo_stack_;
+  static constexpr int MAX_UNDO_HISTORY = 50;
+
+  // Clipboard
+  Polygon clipboard_polygon_;
 };
 
 #endif  // POLYGONCANVAS_H

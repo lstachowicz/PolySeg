@@ -250,10 +250,17 @@ Example:
 
 ## Build:
 
-Project uses Qt Creator and qmake:
+Project uses Qt Creator and qmake. Build from the `build` directory:
 ```bash
-qmake LabelForAi.pro
-make
+cd /home/lstac/SourceCode/PolySeg/build
+qmake ../src/PolySeg.pro
+make -j$(nproc)
 ```
 
-Output executable: `build/Desktop_Qt_6_8_0-Debug/LabelForAi`
+For clean build:
+```bash
+cd /home/lstac/SourceCode/PolySeg/build
+make clean
+qmake ../src/PolySeg.pro
+make -j$(nproc)
+```

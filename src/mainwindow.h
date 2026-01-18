@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QProcess>
 
 #include "projectconfig.h"
 
@@ -13,6 +12,8 @@ class MainWindow;
 }
 class QLabel;
 QT_END_NAMESPACE
+
+class AIPluginManager;
 
 class MainWindow : public QMainWindow
 {
@@ -31,12 +32,15 @@ class MainWindow : public QMainWindow
   void ResetZoom();
 
   void OnClassSelected(int index);
-  void ManageClasses();
-  void OpenFolder();
+  void NextClass();
+  void PreviousClass();
+  void SelectClassByNumber(int number);
+  void AddImagesToProject();
 
   // Project Management
   void CreateNewProject();
   void OpenProject();
+  void OpenRecentProject();
   void SaveProject();
 
   // Image Navigation
@@ -48,7 +52,6 @@ class MainWindow : public QMainWindow
   void LastImage();
 
   // AI Plugin Interface
-  void ConfigurePlugin();
   void RunAutoDetect();
   void RunBatchDetect();
   void RunTrainModel();
@@ -60,34 +63,38 @@ class MainWindow : public QMainWindow
 
   // Settings
   void ShowProjectSettings();
+  void PromptModelRegistration();
+  void RegisterModelManually();
 
   // Statistics
   void ShowProjectStatistics();
 
+  // Edit operations
+  void Undo();
+  void Redo();
+  void CopyPolygon();
+  void PastePolygon();
+
+  // Help
+  void ShowKeyboardShortcuts();
+  void ShowAboutDialog();
+  void EditShortcuts();
+
+ protected:
+  void keyPressEvent(QKeyEvent* event) override;
+
  private:
-  void UpdateClassComboBox();
   void SaveProjectConfig();
   void UpdateWindowTitle();
   void ScanProjectImages();
   void UpdateStatusBar();
+  void LoadShortcuts();
+  void SaveShortcuts();
+  void ApplyShortcuts();
+  void AddToRecentProjects(const QString& projectPath);
+  void UpdateRecentProjectsMenu();
+  void LoadLastProject();
   QString GetProjectStatistics() const;
-
-  // Plugin helpers
-  bool IsPluginAvailable() const;
-  QString BuildPluginCommand(const QString& args_template,
-                             const QMap<QString, QString>& variables) const;
-  void ExecutePluginCommand(const QString& command, const QStringList& args);
-  void ParseDetectionResults(const QString& json_output);
-
-  // Batch detection & meta file management
-  void BatchDetectOnImage(const QString& image_path);
-  void SaveToMetaFile(const QString& image_path);
-  void LoadFromMetaFile(const QString& image_path);
-  bool HasMetaFile(const QString& image_path) const;
-  bool HasApprovedFile(const QString& image_path) const;
-  void PromoteMetaToApproved(const QString& image_path);
-  void DeleteMetaFile(const QString& image_path);
-  int CountUnreviewedImages() const;
 
   Ui::MainWindow* ui;
   QString current_image_path_;
@@ -102,5 +109,14 @@ class MainWindow : public QMainWindow
   QLabel* status_left_;
   QLabel* status_center_;
   QLabel* status_right_;
+
+  // Keyboard shortcuts
+  QMap<QString, QString> shortcuts_;
+  
+  // Recent projects
+  QMenu* recent_projects_menu_;
+
+  // AI Plugin Manager
+  AIPluginManager* ai_plugin_manager_;
 };
 #endif  // MAINWINDOW_H

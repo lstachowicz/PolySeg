@@ -11,15 +11,31 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    modelcomparisondialog.cpp \
     polygoncanvas.cpp \
     projectconfig.cpp \
-    projectsettingsdialog.cpp
+    settingstabbase.cpp \
+    projectsettingstab.cpp \
+    aimodelsettingstab.cpp \
+    importexportsettingstab.cpp \
+    settingsdialog.cpp \
+    shortcuteditdialog.cpp \
+    shortcutssettingstab.cpp \
+    aipluginmanager.cpp
 
 HEADERS += \
     mainwindow.h \
+    modelcomparisondialog.h \
     polygoncanvas.h \
     projectconfig.h \
-    projectsettingsdialog.h
+    settingstabbase.h \
+    projectsettingstab.h \
+    aimodelsettingstab.h \
+    importexportsettingstab.h \
+    settingsdialog.h \
+    shortcuteditdialog.h \
+    shortcutssettingstab.h \
+    aipluginmanager.h
 
 FORMS += \
     mainwindow.ui
