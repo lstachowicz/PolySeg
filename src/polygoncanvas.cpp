@@ -123,8 +123,8 @@ void PolygonCanvas::FinishCurrentPolygon()
     current_polygon_.points.clear();
     current_polygon_.class_id = saved_class_id;
     current_polygon_.color = saved_color;
-    current_polygon_.is_selected = false;
-    
+    current_polygon_.is_selected = true;
+
     emit PolygonsChanged();
     repaint();
     std::cout << "Polygon finished and saved. Click to start next polygon or press Esc to stop." << std::endl;

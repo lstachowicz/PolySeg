@@ -79,8 +79,6 @@ To comply with LGPL v3 requirements:
 
 If you use AI plugins with this application, those plugins may have their own licenses:
 
-- **YOLACT** - MIT License (compatible)
-- **SAM (Segment Anything)** - Apache 2.0 (compatible)
 - **Detectron2** - Apache 2.0 (compatible)
 - **SMP (Segmentation Models PyTorch)** - MIT License (compatible)
 

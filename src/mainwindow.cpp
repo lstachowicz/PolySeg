@@ -55,6 +55,10 @@ MainWindow::MainWindow(QWidget* parent)
 {
   ui->setupUi(this);
 
+  // Install event filter on scroll area and canvas to intercept arrow keys
+  ui->scrollArea->installEventFilter(this);
+  ui->label->installEventFilter(this);
+
   // Initialize AI Plugin Manager
   ai_plugin_manager_ = new AIPluginManager(this);
   ai_plugin_manager_->SetProjectConfig(&project_config_);
@@ -161,6 +165,26 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
   delete ui;
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+  if (event->type() == QEvent::KeyPress)
+  {
+    QKeyEvent* key_event = static_cast<QKeyEvent*>(event);
+    // Intercept arrow keys from scroll area for image navigation
+    if (key_event->key() == Qt::Key_Right)
+    {
+      NextImage();
+      return true;
+    }
+    else if (key_event->key() == Qt::Key_Left)
+    {
+      PreviousImage();
+      return true;
+    }
+  }
+  return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)
@@ -1501,7 +1525,7 @@ with universal AI plugin support.</p>
 <p><b>Key Features:</b></p>
 <ul>
 <li>Interactive polygon drawing with multi-class support</li>
-<li>Universal AI plugin system (YOLO, SAM, Detectron2, custom models)</li>
+<li>Universal AI plugin system (SMP, Detectron2, custom models)</li>
 <li>Train/Val/Test split management</li>
 <li>Model version tracking and comparison</li>
 <li>Batch detection with quality control</li>
@@ -1614,6 +1638,13 @@ void MainWindow::ApplyShortcuts()
       }
     }
   }
+
+  // Set application-wide shortcut context for navigation actions
+  // This ensures arrow keys work even when QScrollArea or PolygonCanvas has focus
+  ui->actionNextImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionPreviousImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionFirstImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionLastImage->setShortcutContext(Qt::ApplicationShortcut);
 }
 
 void MainWindow::AddToRecentProjects(const QString& projectPath)

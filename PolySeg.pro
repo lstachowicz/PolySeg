@@ -14,6 +14,7 @@ INCLUDEPATH += src
 SOURCES += \
     src/main.cpp \
     src/mainwindow.cpp \
+    src/modelcomparisondialog.cpp \
     src/polygoncanvas.cpp \
     src/projectconfig.cpp \
     src/settingstabbase.cpp \
@@ -21,11 +22,13 @@ SOURCES += \
     src/aimodelsettingstab.cpp \
     src/importexportsettingstab.cpp \
     src/settingsdialog.cpp \
-    src/modelcomparisondialog.cpp \
-    src/shortcutseditor.cpp
+    src/shortcuteditdialog.cpp \
+    src/shortcutssettingstab.cpp \
+    src/aipluginmanager.cpp
 
 HEADERS += \
     src/mainwindow.h \
+    src/modelcomparisondialog.h \
     src/polygoncanvas.h \
     src/projectconfig.h \
     src/settingstabbase.h \
@@ -33,8 +36,9 @@ HEADERS += \
     src/aimodelsettingstab.h \
     src/importexportsettingstab.h \
     src/settingsdialog.h \
-    src/modelcomparisondialog.h \
-    src/shortcutseditor.h
+    src/shortcuteditdialog.h \
+    src/shortcutssettingstab.h \
+    src/aipluginmanager.h
 
 FORMS += \
     src/mainwindow.ui

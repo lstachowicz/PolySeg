@@ -63,6 +63,7 @@ class AIModelSettingsTab : public BaseSettingsTab
  private slots:
   void OnBrowsePluginScript();
   void OnAddPluginSetting();
+  void OnRemovePluginSetting();
   void OnSplitsEnabledChanged(int state);
   void OnSplitRatioChanged();
   void OnResetSplits();

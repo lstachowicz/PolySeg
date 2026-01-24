@@ -194,7 +194,19 @@ void AIPluginManager::ExecutePluginCommand(const QString& command, const QString
 
 void AIPluginManager::ParseDetectionResults(const QString& json_output)
 {
+  // Try to parse the output directly first
   QJsonDocument doc = QJsonDocument::fromJson(json_output.toUtf8());
+
+  // If parsing failed, try to find JSON object in output (skip warnings/logs)
+  if (doc.isNull() || !doc.isObject())
+  {
+    int json_start = json_output.indexOf('{');
+    if (json_start > 0)
+    {
+      QString json_str = json_output.mid(json_start);
+      doc = QJsonDocument::fromJson(json_str.toUtf8());
+    }
+  }
 
   if (doc.isNull() || !doc.isObject())
   {
@@ -529,10 +541,18 @@ void AIPluginManager::RunTrainModel()
   // Add parsed arguments
   args.append(args_string.split(" ", Qt::SkipEmptyParts));
 
-  QMessageBox::information(nullptr, "Training Started",
-                           "Training will run in the background.\n\n"
-                           "Check the terminal for progress.\n\n"
-                           "You will be prompted to register the model when training completes.");
+  QMessageBox::StandardButton reply = QMessageBox::question(
+      nullptr, "Start Training",
+      "Training will run in the background.\n\n"
+      "Check the terminal for progress.\n\n"
+      "You will be prompted to register the model when training completes.\n\n"
+      "Start training now?",
+      QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok);
+
+  if (reply == QMessageBox::Cancel)
+  {
+    return;
+  }
 
   // Clean up any existing training process
   if (training_process_ != nullptr)
@@ -861,6 +881,18 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
 
   // Parse JSON output
   QJsonDocument doc = QJsonDocument::fromJson(output.toUtf8());
+
+  // If parsing failed, try to find JSON object in output (skip warnings/logs)
+  if (doc.isNull() || !doc.isObject())
+  {
+    int json_start = output.indexOf('{');
+    if (json_start > 0)
+    {
+      QString json_str = output.mid(json_start);
+      doc = QJsonDocument::fromJson(json_str.toUtf8());
+    }
+  }
+
   if (doc.isNull() || !doc.isObject())
   {
     std::cerr << "Invalid JSON from plugin for: " << image_path.toStdString() << std::endl;
@@ -868,6 +900,16 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   }
 
   QJsonObject root = doc.object();
+
+  // Check for plugin error response
+  if (root.contains("success") && !root["success"].toBool())
+  {
+    QString error_msg = root.contains("error") ? root["error"].toString() : "Unknown error";
+    std::cerr << "Plugin error for " << image_path.toStdString() << ": "
+              << error_msg.toStdString() << std::endl;
+    return;
+  }
+
   if (!root.contains("detections") || !root["detections"].isArray())
   {
     std::cerr << "Missing detections array for: " << image_path.toStdString() << std::endl;

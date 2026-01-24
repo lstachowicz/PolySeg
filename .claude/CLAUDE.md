@@ -23,6 +23,42 @@ PolySeg is a Qt6-based polygon annotation tool for creating instance segmentatio
 - Run formatting before commits: `clang-format -i *.cpp *.h`
 - Run linting: `clang-tidy *.cpp -- -I/path/to/qt/include`
 
+### Commit Message Format
+Use conventional commit format with the following structure:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, no logic change)
+- `refactor`: Code refactoring (no feature or fix)
+- `test`: Adding or updating tests
+- `chore`: Build, config, or tooling changes
+
+**Rules:**
+- Subject line: max 50 characters, imperative mood, no period
+- Body: wrap at 72 characters, explain what and why (not how)
+- Scope: optional, e.g., `canvas`, `mainwindow`, `plugins`, `ui`
+
+**Examples:**
+```
+feat(canvas): add multi-polygon selection support
+
+fix(plugins): resolve memory leak in AI model loading
+
+docs: update build instructions for Qt 6.8
+
+refactor(mainwindow): extract file dialog logic to separate method
+```
+
 ## Architecture
 
 ### Core Components
@@ -150,7 +186,7 @@ painter.drawLine(p1, p2);
 - Use `QFileInfo` for path manipulation
 
 ## Testing Guidelines
-- Build: `qmake PolySeg.pro && make`
+- Build: `qmake6 PolySeg.pro && make -j4`
 - Run: `./PolySeg`
 - Test multi-polygon: Draw → Enter → Draw → Enter → Save
 - Verify annotation format: Check .txt file has multiple lines
@@ -252,15 +288,15 @@ Example:
 
 Project uses Qt Creator and qmake. Build from the `build` directory:
 ```bash
-cd /home/lstac/SourceCode/PolySeg/build
-qmake ../src/PolySeg.pro
+cd build
+qmake ../PolySeg.pro
 make -j$(nproc)
 ```
 
 For clean build:
 ```bash
-cd /home/lstac/SourceCode/PolySeg/build
+cd build
 make clean
-qmake ../src/PolySeg.pro
+qmake ../PolySeg.pro
 make -j$(nproc)
 ```

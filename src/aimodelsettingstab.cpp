@@ -247,8 +247,17 @@ void AIModelSettingsTab::LoadFromConfig(const ProjectConfig& config)
   for (auto it = plugin.settings.begin(); it != plugin.settings.end(); ++it)
   {
     QLineEdit* edit = new QLineEdit(it.value());
+    QPushButton* remove_btn = new QPushButton("X");
+    remove_btn->setFixedWidth(24);
+    remove_btn->setProperty("setting_key", it.key());
+    connect(remove_btn, &QPushButton::clicked, this, &AIModelSettingsTab::OnRemovePluginSetting);
+
+    QHBoxLayout* row_layout = new QHBoxLayout();
+    row_layout->addWidget(edit);
+    row_layout->addWidget(remove_btn);
+
     plugin_settings_layout_->insertRow(plugin_settings_layout_->rowCount() - 1, it.key() + ":",
-                                       edit);
+                                       row_layout);
     plugin_setting_edits_[it.key()] = edit;
   }
 
@@ -346,10 +355,51 @@ void AIModelSettingsTab::OnAddPluginSetting()
     }
 
     QLineEdit* edit = new QLineEdit();
+    QPushButton* remove_btn = new QPushButton("X");
+    remove_btn->setFixedWidth(24);
+    remove_btn->setProperty("setting_key", key);
+    connect(remove_btn, &QPushButton::clicked, this, &AIModelSettingsTab::OnRemovePluginSetting);
+
+    QHBoxLayout* row_layout = new QHBoxLayout();
+    row_layout->addWidget(edit);
+    row_layout->addWidget(remove_btn);
+
     // Insert before the "Add Setting" button row
-    plugin_settings_layout_->insertRow(plugin_settings_layout_->rowCount() - 1, key + ":", edit);
+    plugin_settings_layout_->insertRow(plugin_settings_layout_->rowCount() - 1, key + ":", row_layout);
     plugin_setting_edits_[key] = edit;
   }
+}
+
+void AIModelSettingsTab::OnRemovePluginSetting()
+{
+  QPushButton* btn = qobject_cast<QPushButton*>(sender());
+  if (!btn)
+  {
+    return;
+  }
+
+  QString key = btn->property("setting_key").toString();
+  if (key.isEmpty() || !plugin_setting_edits_.contains(key))
+  {
+    return;
+  }
+
+  // Find and remove the row from the layout
+  for (int i = 0; i < plugin_settings_layout_->rowCount(); ++i)
+  {
+    QLayoutItem* label_item = plugin_settings_layout_->itemAt(i, QFormLayout::LabelRole);
+    if (label_item && label_item->widget())
+    {
+      QLabel* label = qobject_cast<QLabel*>(label_item->widget());
+      if (label && label->text() == key + ":")
+      {
+        plugin_settings_layout_->removeRow(i);
+        break;
+      }
+    }
+  }
+
+  plugin_setting_edits_.remove(key);
 }
 
 void AIModelSettingsTab::OnAddModelVersion()
