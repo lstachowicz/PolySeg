@@ -3,7 +3,7 @@
 **Smart Polygon Annotation with Universal AI Plugin Support**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Qt Version](https://img.shields.io/badge/Qt-6.4.0-green.svg)](https://www.qt.io/)
+[![Qt Version](https://img.shields.io/badge/Qt-6.5.3-green.svg)](https://www.qt.io/)
 
 A professional Qt6-based desktop application for creating polygon annotations for computer vision training datasets. Features a **universal AI plugin system** that integrates with any AI detection framework.
 
@@ -81,7 +81,7 @@ PolySeg is designed for ML engineers, data scientists, and researchers who need 
 
 ### Build Requirements
 
-- **Qt Framework**: 6.4.0 or later
+- **Qt Framework**: 6.5.3 or later
 - **Compiler**: C++17 compatible (GCC, Clang, MSVC)
 - **Build System**: qmake
 - **Optional**: clang-format and clang-tidy (for development)
@@ -111,8 +111,8 @@ brew install qt@6
 
 **Windows:**
 - Download Qt installer from [qt.io/download](https://www.qt.io/download-open-source)
-- Run the installer and select Qt 6.4.x with MSVC compiler
-- Add Qt bin directory to PATH (e.g., `C:\Qt\6.4.0\msvc2019_64\bin`)
+- Run the installer and select Qt 6.5.3 with MSVC compiler
+- Add Qt bin directory to PATH (e.g., `C:\Qt\6.5.3\msvc2019_64\bin`)
 
 ### AI Plugin Requirements (Optional)
 
@@ -896,7 +896,7 @@ MIT and Apache 2.0 licensed plugins can be freely integrated.
 
 This application is built with:
 
-- **Qt Framework 6.4.0** - LGPL v3 License ([https://www.qt.io/](https://www.qt.io/))
+- **Qt Framework 6.5.3** - LGPL v3 License ([https://www.qt.io/](https://www.qt.io/))
   - Qt is dynamically linked, allowing users to replace libraries under LGPL v3 terms
 
 ---

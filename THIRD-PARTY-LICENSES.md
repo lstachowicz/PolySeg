@@ -4,7 +4,7 @@ PolySeg uses the following third-party software components:
 
 ## Qt Framework
 
-**Version:** 6.4.0  
+**Version:** 6.5.3  
 **License:** GNU Lesser General Public License v3 (LGPL v3)  
 **Copyright:** The Qt Company Ltd.  
 **Website:** https://www.qt.io/  

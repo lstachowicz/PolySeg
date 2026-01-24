@@ -1511,7 +1511,7 @@ with universal AI plugin support.</p>
 <br>
 <p><b>License:</b> MIT</p>
 <p><b>Author:</b> Lukasz Stachowicz</p>
-<p><b>Framework:</b> Qt 6.4.0 (LGPL v3)</p>
+<p><b>Framework:</b> Qt 6.5.3 (LGPL v3)</p>
 <br>
 <p>Visit: <a href='https://github.com/lstachowicz/PolySeg'>github.com/lstachowicz/PolySeg</a></p>
 )";

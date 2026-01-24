@@ -192,7 +192,7 @@ painter.drawLine(p1, p2);
 - Verify annotation format: Check .txt file has multiple lines
 
 ## Dependencies
-- Qt 6.4.0 (Core, Widgets, GUI)
+- Qt 6.5.3 (Core, Widgets, GUI)
 - C++17 compiler
 - Future: OpenCV (for AI features in Phase 7)
 
@@ -279,7 +279,7 @@ Example:
 
 ## Technologies:
 
-- Qt 6.4.0
+- Qt 6.5.3
 - C++
 - QPainter for 2D graphics
 - Qt Designer for UI
