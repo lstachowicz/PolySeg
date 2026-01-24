@@ -9,13 +9,7 @@ numpy>=1.23.0
 pillow>=9.0.0
 pycocotools>=2.0.6
 
-# Detectron2 installation (choose one):
-
-# Option 1: Pre-built wheel (Linux/macOS with CUDA 11.7)
-# python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'
-
-# Option 2: Build from source
-# git clone https://github.com/facebookresearch/detectron2.git
-# cd detectron2 && pip install -e .
+# Detectron2 from GitHub
+git+https://github.com/facebookresearch/detectron2.git
 
 # Note: See https://detectron2.readthedocs.io/en/latest/tutorials/install.html

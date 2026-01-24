@@ -30,8 +30,8 @@ void ShortcutsSettingsTab::InitializeDefaultShortcuts()
   default_shortcuts_["Reset Zoom"] = "Ctrl+0";
   default_shortcuts_["Next Class"] = "Tab";
   default_shortcuts_["Previous Class"] = "Shift+Tab";
-  default_shortcuts_["Next Image"] = "Ctrl+Right";
-  default_shortcuts_["Previous Image"] = "Ctrl+Left";
+  default_shortcuts_["Next Image"] = "Right";
+  default_shortcuts_["Previous Image"] = "Left";
   default_shortcuts_["First Image"] = "Home";
   default_shortcuts_["Last Image"] = "End";
   default_shortcuts_["Auto Detect"] = "Ctrl+D";

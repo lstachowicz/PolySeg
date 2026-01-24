@@ -1501,7 +1501,7 @@ with universal AI plugin support.</p>
 <p><b>Key Features:</b></p>
 <ul>
 <li>Interactive polygon drawing with multi-class support</li>
-<li>Universal AI plugin system (YOLO, SAM, Detectron2, custom models)</li>
+<li>Universal AI plugin system (SMP, Detectron2, custom models)</li>
 <li>Train/Val/Test split management</li>
 <li>Model version tracking and comparison</li>
 <li>Batch detection with quality control</li>
@@ -1511,7 +1511,7 @@ with universal AI plugin support.</p>
 <br>
 <p><b>License:</b> MIT</p>
 <p><b>Author:</b> Lukasz Stachowicz</p>
-<p><b>Framework:</b> Qt 6.8.0 (LGPL v3)</p>
+<p><b>Framework:</b> Qt 6.5.3 (LGPL v3)</p>
 <br>
 <p>Visit: <a href='https://github.com/lstachowicz/PolySeg'>github.com/lstachowicz/PolySeg</a></p>
 )";
@@ -1614,6 +1614,13 @@ void MainWindow::ApplyShortcuts()
       }
     }
   }
+
+  // Set application-wide shortcut context for navigation actions
+  // This ensures arrow keys work even when QScrollArea or PolygonCanvas has focus
+  ui->actionNextImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionPreviousImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionFirstImage->setShortcutContext(Qt::ApplicationShortcut);
+  ui->actionLastImage->setShortcutContext(Qt::ApplicationShortcut);
 }
 
 void MainWindow::AddToRecentProjects(const QString& projectPath)

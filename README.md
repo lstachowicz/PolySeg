@@ -3,7 +3,7 @@
 **Smart Polygon Annotation with Universal AI Plugin Support**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Qt Version](https://img.shields.io/badge/Qt-6.8.0-green.svg)](https://www.qt.io/)
+[![Qt Version](https://img.shields.io/badge/Qt-6.5.3-green.svg)](https://www.qt.io/)
 
 A professional Qt6-based desktop application for creating polygon annotations for computer vision training datasets. Features a **universal AI plugin system** that integrates with any AI detection framework.
 
@@ -81,10 +81,38 @@ PolySeg is designed for ML engineers, data scientists, and researchers who need 
 
 ### Build Requirements
 
-- **Qt Framework**: 6.8.0 or later
+- **Qt Framework**: 6.5.3 or later
 - **Compiler**: C++17 compatible (GCC, Clang, MSVC)
 - **Build System**: qmake
 - **Optional**: clang-format and clang-tidy (for development)
+
+### Installing Qt 6.4
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get update
+sudo apt-get install -y qt6-base-dev qt6-tools-dev-tools
+```
+
+**Linux (Fedora):**
+```bash
+sudo dnf install qt6-qtbase-devel qt6-qttools-devel
+```
+
+**Linux (Arch):**
+```bash
+sudo pacman -S qt6-base qt6-tools
+```
+
+**macOS (Homebrew):**
+```bash
+brew install qt@6
+```
+
+**Windows:**
+- Download Qt installer from [qt.io/download](https://www.qt.io/download-open-source)
+- Run the installer and select Qt 6.5.3 with MSVC compiler
+- Add Qt bin directory to PATH (e.g., `C:\Qt\6.5.3\msvc2019_64\bin`)
 
 ### AI Plugin Requirements (Optional)
 
@@ -532,51 +560,52 @@ Tools → Review → Next Unreviewed (Ctrl+U)
 
 | Plugin | License | Speed | Accuracy | Best For |
 |--------|---------|-------|----------|----------|
-| **YOLACT** | MIT | Very Fast | Medium | Real-time applications |
 | **Detectron2** | Apache 2.0 | Slow | Very High | Research, highest accuracy |
 | **SMP** | MIT | Medium | High | Flexible experimentation |
-
-### YOLACT Plugin
-
-**License:** MIT
-
-**Installation:**
-```bash
-git clone https://github.com/dbolya/yolact.git
-pip install torch torchvision opencv-python pillow pycocotools
-wget https://github.com/dbolya/yolact/releases/download/v1.0/yolact_base_54_800000.pth -P weights/
-```
-
-**Configuration:**
-```
-Command: python3
-Script Path: ./plugins/yolact_plugin.py
-Detect Args: detect --image {image} --model {model} --conf {confidence}
-
-Settings:
-  model: ./plugins/yolact/weights/yolact_base_54_800000.pth
-  confidence: 0.3
-```
 
 ### Detectron2 Plugin
 
 **License:** Apache 2.0
 
 **Installation:**
+
+Create a virtual environment in your project's `plugin/` directory:
+
 ```bash
-pip install torch torchvision
-pip install 'git+https://github.com/facebookresearch/detectron2.git'
+# Navigate to your project's plugin directory
+cd /path/to/your/project/plugin
+
+# Create virtual environment
+python3 -m venv detectron2_venv
+
+# Activate the environment
+source detectron2_venv/bin/activate
+
+# Install dependencies from requirements file
+# IMPORTANT: Use --no-build-isolation to prevent detectron2 from creating its own venv
+pip install -r /path/to/PolySeg/examples/plugins/requirements/detectron2.txt --no-build-isolation
+
+# Deactivate when done
+deactivate
 ```
 
-**Configuration:**
+**Copy the plugin script:**
+```bash
+cp /path/to/PolySeg/examples/plugins/detectron2_plugin.py /path/to/your/project/plugin/
 ```
+
+**Configuration in PolySeg:**
+```
+Enable AI Plugin: ✓
+Plugin Name: Detectron2 Mask R-CNN
+Env Setup: source plugin/detectron2_venv/bin/activate
 Command: python3
-Script Path: ./plugins/detectron2_plugin.py
+Script Path: plugin/detectron2_plugin.py
 Detect Args: detect --image {image} --config {config} --model {model} --conf {confidence}
 
 Settings:
   config: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml
-  model: model_zoo://COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl
+  model: models/my_model/model_final.pth
   confidence: 0.5
 ```
 
@@ -591,25 +620,56 @@ Settings:
 **License:** MIT
 
 **Installation:**
+
+Create a virtual environment in your project's `plugin/` directory:
+
 ```bash
-pip install segmentation-models-pytorch torch torchvision albumentations opencv-python
+# Navigate to your project's plugin directory
+cd /path/to/your/project/plugin
+
+# Create virtual environment
+python3 -m venv smp_venv
+
+# Activate the environment
+source smp_venv/bin/activate
+
+# Install dependencies from requirements file
+pip install -r /path/to/PolySeg/examples/plugins/requirements/smp.txt
+
+# Deactivate when done
+deactivate
 ```
 
-**Configuration:**
+**Copy the plugin script:**
+```bash
+cp /path/to/PolySeg/examples/plugins/smp_plugin.py /path/to/your/project/plugin/
 ```
+
+**Configuration in PolySeg:**
+```
+Enable AI Plugin: ✓
+Plugin Name: SMP Segmentation
+Env Setup: source plugin/smp_venv/bin/activate
 Command: python3
-Script Path: ./plugins/smp_plugin.py
-Detect Args: detect --image {image} --arch {arch} --encoder {encoder} --conf {confidence}
+Script Path: plugin/smp_plugin.py
+Detect Args: detect --image {image} --architecture {architecture} --encoder {encoder} --weights {model} --conf {confidence} --classes {classes}
+Train Args: train --dataset {project}/data.yaml --output {model} --architecture {architecture} --encoder {encoder} --epochs {epochs} --batch-size {batch_size} --lr {lr} --img-size {img_size} --classes {classes}
 
 Settings:
-  arch: unet
+  architecture: Unet
   encoder: resnet34
+  model: models/best.pt
   confidence: 0.5
+  classes: 1
+  epochs: 50
+  batch_size: 4
+  lr: 0.0001
+  img_size: 512
 ```
 
-**Architectures:** unet, unetplusplus, pspnet, deeplabv3, deeplabv3plus, fpn, pan, linknet
+**Architectures:** Unet, UnetPlusPlus, MAnet, Linknet, FPN, PSPNet, DeepLabV3, DeepLabV3Plus, PAN
 
-**Encoders:** resnet18, resnet34, resnet50, efficientnet-b0 to b7, mobilenet_v2
+**Encoders:** resnet18, resnet34, resnet50, resnet101, efficientnet-b0 to b7, mobilenet_v2, timm-mobilenetv3_large_100
 
 ### Creating Custom Plugins
 
@@ -692,8 +752,8 @@ if __name__ == "__main__":
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+Right` | Next image |
-| `Ctrl+Left` | Previous image |
+| `Right` | Next image |
+| `Left` | Previous image |
 | `Home` | First image |
 | `End` | Last image |
 
@@ -836,7 +896,7 @@ MIT and Apache 2.0 licensed plugins can be freely integrated.
 
 This application is built with:
 
-- **Qt Framework 6.8.0** - LGPL v3 License ([https://www.qt.io/](https://www.qt.io/))
+- **Qt Framework 6.5.3** - LGPL v3 License ([https://www.qt.io/](https://www.qt.io/))
   - Qt is dynamically linked, allowing users to replace libraries under LGPL v3 terms
 
 ---

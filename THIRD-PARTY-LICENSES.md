@@ -4,7 +4,7 @@ PolySeg uses the following third-party software components:
 
 ## Qt Framework
 
-**Version:** 6.8.0  
+**Version:** 6.5.3  
 **License:** GNU Lesser General Public License v3 (LGPL v3)  
 **Copyright:** The Qt Company Ltd.  
 **Website:** https://www.qt.io/  
@@ -79,8 +79,6 @@ To comply with LGPL v3 requirements:
 
 If you use AI plugins with this application, those plugins may have their own licenses:
 
-- **YOLACT** - MIT License (compatible)
-- **SAM (Segment Anything)** - Apache 2.0 (compatible)
 - **Detectron2** - Apache 2.0 (compatible)
 - **SMP (Segmentation Models PyTorch)** - MIT License (compatible)
 

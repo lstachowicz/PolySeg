@@ -123,7 +123,6 @@ void ImportExportSettingsTab::SetupUI()
   export_format_combo_ = new QComboBox();
   export_format_combo_->addItem("Segmentation (normalized)");
   export_format_combo_->addItem("Bounding Box (normalized)");
-  export_format_combo_->addItem("COCO JSON");
   export_layout->addRow("Export Format:", export_format_combo_);
 
   normalize_coords_checkbox_ = new QCheckBox("Normalize coordinates (0.0 - 1.0)");
