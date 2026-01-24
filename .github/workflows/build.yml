@@ -15,10 +15,10 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.4.0'
+        version: '6.5.3'
         host: 'linux'
         target: 'desktop'
-        arch: 'linux_gcc_64'
+        arch: 'gcc_64'
         cache: true
 
     - name: Build
@@ -40,10 +40,10 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.4.0'
+        version: '6.5.3'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2022_64'
+        arch: 'win64_msvc2019_64'
         cache: true
 
     - name: Setup MSVC
@@ -68,7 +68,7 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.4.0'
+        version: '6.5.3'
         host: 'mac'
         target: 'desktop'
         arch: 'clang_64'
