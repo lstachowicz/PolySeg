@@ -54,7 +54,7 @@ feat(canvas): add multi-polygon selection support
 
 fix(plugins): resolve memory leak in AI model loading
 
-docs: update build instructions for Qt 6.8
+docs: update build instructions for Qt 6.4
 
 refactor(mainwindow): extract file dialog logic to separate method
 ```
@@ -192,7 +192,7 @@ painter.drawLine(p1, p2);
 - Verify annotation format: Check .txt file has multiple lines
 
 ## Dependencies
-- Qt 6.8.0 (Core, Widgets, GUI)
+- Qt 6.4.0 (Core, Widgets, GUI)
 - C++17 compiler
 - Future: OpenCV (for AI features in Phase 7)
 
@@ -279,7 +279,7 @@ Example:
 
 ## Technologies:
 
-- Qt 6.8.0
+- Qt 6.4.0
 - C++
 - QPainter for 2D graphics
 - Qt Designer for UI
