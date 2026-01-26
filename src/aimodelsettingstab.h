@@ -3,16 +3,13 @@
 
 #include "settingstabbase.h"
 
-#include <QCheckBox>
-#include <QFormLayout>
-#include <QHeaderView>
-#include <QLabel>
-#include <QLineEdit>
 #include <QMap>
-#include <QPushButton>
-#include <QSlider>
 #include <QString>
-#include <QTableWidget>
+
+namespace Ui
+{
+class AIModelSettingsTab;
+}
 
 class ProjectConfig;
 
@@ -32,7 +29,7 @@ class AIModelSettingsTab : public BaseSettingsTab
  public:
   explicit AIModelSettingsTab(ProjectConfig& config, const QString& project_dir,
                               QWidget* parent = nullptr);
-  ~AIModelSettingsTab() override = default;
+  ~AIModelSettingsTab() override;
 
   // BaseSettingsTab interface
   void LoadFromConfig(const ProjectConfig& config) override;
@@ -48,6 +45,11 @@ class AIModelSettingsTab : public BaseSettingsTab
    * @brief Signal emitted when split configuration changes
    */
   void splitsChanged();
+
+  /**
+   * @brief Signal emitted to request opening the plugin wizard
+   */
+  void requestPluginWizard();
 
  public slots:
   /**
@@ -74,40 +76,12 @@ class AIModelSettingsTab : public BaseSettingsTab
   void OnRemoveModelVersion();
 
  private:
+  void PopulatePluginSettingsTable();
+  QMap<QString, QString> GetPluginSettingsFromTable() const;
+
+  Ui::AIModelSettingsTab* ui_;
   ProjectConfig& config_;
   QString project_dir_;
-
-  // Plugin Configuration widgets
-  QCheckBox* plugin_enabled_checkbox_;
-  QLineEdit* plugin_name_edit_;
-  QLineEdit* plugin_env_setup_edit_;
-  QLineEdit* plugin_command_edit_;
-  QLineEdit* plugin_script_edit_;
-  QPushButton* browse_script_button_;
-  QLineEdit* plugin_detect_args_edit_;
-  QLineEdit* plugin_train_args_edit_;
-  QFormLayout* plugin_settings_layout_;
-  QMap<QString, QLineEdit*> plugin_setting_edits_;
-  QPushButton* add_plugin_setting_button_;
-
-  // Dataset Split widgets
-  QCheckBox* splits_enabled_checkbox_;
-  QSlider* train_ratio_slider_;
-  QSlider* val_ratio_slider_;
-  QSlider* test_ratio_slider_;
-  QLabel* train_ratio_label_;
-  QLabel* val_ratio_label_;
-  QLabel* test_ratio_label_;
-  QLabel* split_statistics_label_;
-  QLineEdit* salt_edit_;
-  QPushButton* reset_splits_button_;
-
-  // Model Versions widgets
-  QTableWidget* model_versions_table_;
-  QPushButton* add_model_button_;
-  QPushButton* edit_notes_button_;
-  QPushButton* compare_models_button_;
-  QPushButton* remove_model_button_;
 };
 
 #endif  // AIMODELSETTINGSTAB_H

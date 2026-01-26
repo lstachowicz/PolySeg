@@ -33,6 +33,14 @@ struct PluginConfig
   QString train_args;   // Arguments for training (e.g., "train --data {dataset} --epochs {epochs}")
   QMap<QString, QString> settings;  // Custom plugin settings (model_path, confidence, etc.)
 
+  // Wizard-configured fields
+  QString plugin_id;           // "detectron2", "smp", or "custom"
+  QString architecture;        // "mask_rcnn", "UnetPlusPlus", etc.
+  QString backbone;            // "R_50_FPN", "efficientnet-b3", etc.
+  QString pretrained_model_id; // "coco_mask_rcnn_R_50_FPN_3x", etc.
+  QString model_source;        // "downloaded", "existing", "scratch", "trained"
+  bool use_project_venv;       // Whether to use project-specific virtual environment
+
   PluginConfig();
   QJsonObject ToJson() const;
   static PluginConfig FromJson(const QJsonObject& json);

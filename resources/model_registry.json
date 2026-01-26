@@ -1,0 +1,340 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-01-24",
+  "plugins": {
+    "detectron2": {
+      "name": "Detectron2",
+      "description": "Meta AI's detection library",
+      "license": "Apache 2.0",
+      "requirements_file": "examples/plugins/requirements/detectron2.txt",
+      "script_path": "examples/plugins/detectron2_plugin.py",
+      "gpu_recommended": true,
+      "is_custom": false,
+      "architectures": [
+        {
+          "id": "mask_rcnn",
+          "name": "Mask R-CNN",
+          "description": "Best balance of speed and accuracy",
+          "recommended": true,
+          "backbones": [
+            {
+              "id": "R_50_FPN",
+              "name": "ResNet-50-FPN",
+              "params_millions": 44,
+              "fps_gpu": 8,
+              "fps_cpu": 1,
+              "recommended": true
+            },
+            {
+              "id": "R_101_FPN",
+              "name": "ResNet-101-FPN",
+              "params_millions": 63,
+              "fps_gpu": 6,
+              "fps_cpu": 0.5,
+              "recommended": false
+            },
+            {
+              "id": "X_101_32x8d_FPN",
+              "name": "ResNeXt-101-32x8d-FPN",
+              "params_millions": 89,
+              "fps_gpu": 4,
+              "fps_cpu": 0.3,
+              "recommended": false
+            }
+          ]
+        },
+        {
+          "id": "cascade_mask_rcnn",
+          "name": "Cascade Mask R-CNN",
+          "description": "Higher accuracy, slower inference",
+          "recommended": false,
+          "backbones": [
+            {
+              "id": "R_50_FPN",
+              "name": "ResNet-50-FPN",
+              "params_millions": 77,
+              "fps_gpu": 5,
+              "fps_cpu": 0.5,
+              "recommended": true
+            },
+            {
+              "id": "R_101_FPN",
+              "name": "ResNet-101-FPN",
+              "params_millions": 96,
+              "fps_gpu": 4,
+              "fps_cpu": 0.3,
+              "recommended": false
+            }
+          ]
+        }
+      ],
+      "pretrained_models": [
+        {
+          "id": "coco_mask_rcnn_R_50_FPN_3x",
+          "name": "COCO Instance Segmentation",
+          "architecture": "mask_rcnn",
+          "backbone": "R_50_FPN",
+          "dataset": "coco",
+          "num_classes": 80,
+          "metrics": {
+            "mAP": 37.2,
+            "mAP_50": 58.5
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl",
+          "size_bytes": 178000000,
+          "checksum_sha256": "a3ec4fdd0c28f8abc6dd9a7a0e5dae5b40a6b40e0e6a4c8e5e3dce8f9a5b1234",
+          "recommended": true
+        },
+        {
+          "id": "coco_mask_rcnn_R_101_FPN_3x",
+          "name": "COCO Instance Segmentation (R101)",
+          "architecture": "mask_rcnn",
+          "backbone": "R_101_FPN",
+          "dataset": "coco",
+          "num_classes": 80,
+          "metrics": {
+            "mAP": 38.6,
+            "mAP_50": 60.4
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x/138205316/model_final_a3ec72.pkl",
+          "size_bytes": 254000000,
+          "checksum_sha256": "b4fd5a1e2c39f8def7ea0f6b5c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4567",
+          "recommended": false
+        },
+        {
+          "id": "coco_mask_rcnn_X_101_FPN_3x",
+          "name": "COCO Instance Segmentation (X101)",
+          "architecture": "mask_rcnn",
+          "backbone": "X_101_32x8d_FPN",
+          "dataset": "coco",
+          "num_classes": 80,
+          "metrics": {
+            "mAP": 39.4,
+            "mAP_50": 61.2
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x/139653917/model_final_2d9806.pkl",
+          "size_bytes": 340000000,
+          "checksum_sha256": "c5fe6b2f3d40a9efg8ba1g7c6d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5678",
+          "recommended": false
+        },
+        {
+          "id": "lvis_mask_rcnn_R_50_FPN",
+          "name": "LVIS Instance Segmentation",
+          "architecture": "mask_rcnn",
+          "backbone": "R_50_FPN",
+          "dataset": "lvis",
+          "num_classes": 1203,
+          "metrics": {
+            "mAP": 25.6
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/LVISv0.5-InstanceSegmentation/mask_rcnn_R_50_FPN_1x/144219072/model_final_571f7c.pkl",
+          "size_bytes": 182000000,
+          "checksum_sha256": "d6gf7c3g4e51b0fgh9cb2h8d7e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6789",
+          "recommended": false
+        },
+        {
+          "id": "cityscapes_mask_rcnn_R_50_FPN",
+          "name": "Cityscapes Instance Segmentation",
+          "architecture": "mask_rcnn",
+          "backbone": "R_50_FPN",
+          "dataset": "cityscapes",
+          "num_classes": 8,
+          "metrics": {
+            "mAP": 36.5
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/Cityscapes/mask_rcnn_R_50_FPN/142423278/model_final_af9cf5.pkl",
+          "size_bytes": 175000000,
+          "checksum_sha256": "e7hg8d4h5f62c1ghi0dc3i9e8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7890",
+          "recommended": false
+        },
+        {
+          "id": "coco_cascade_mask_rcnn_R_50_FPN_3x",
+          "name": "COCO Cascade Instance Segmentation",
+          "architecture": "cascade_mask_rcnn",
+          "backbone": "R_50_FPN",
+          "dataset": "coco",
+          "num_classes": 80,
+          "metrics": {
+            "mAP": 40.3,
+            "mAP_50": 59.1
+          },
+          "download_url": "https://dl.fbaipublicfiles.com/detectron2/Misc/cascade_mask_rcnn_R_50_FPN_3x/144998488/model_final_480dd8.pkl",
+          "size_bytes": 408000000,
+          "checksum_sha256": "f8ih9e5i6g73d2hij1ed4j0f9g1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8901",
+          "recommended": false
+        }
+      ]
+    },
+    "smp": {
+      "name": "Segmentation Models PyTorch",
+      "description": "500+ encoder/decoder combinations",
+      "license": "MIT",
+      "requirements_file": "examples/plugins/requirements/smp.txt",
+      "script_path": "examples/plugins/smp_plugin.py",
+      "gpu_recommended": false,
+      "is_custom": false,
+      "decoders": [
+        {
+          "id": "Unet",
+          "name": "UNet",
+          "description": "Classic encoder-decoder architecture",
+          "recommended": true
+        },
+        {
+          "id": "UnetPlusPlus",
+          "name": "UNet++",
+          "description": "Nested UNet with skip connections",
+          "recommended": false
+        },
+        {
+          "id": "DeepLabV3Plus",
+          "name": "DeepLabV3+",
+          "description": "Atrous convolutions for multi-scale features",
+          "recommended": true
+        },
+        {
+          "id": "FPN",
+          "name": "FPN",
+          "description": "Feature Pyramid Network",
+          "recommended": false
+        },
+        {
+          "id": "PSPNet",
+          "name": "PSPNet",
+          "description": "Pyramid Pooling Module",
+          "recommended": false
+        },
+        {
+          "id": "MAnet",
+          "name": "MAnet",
+          "description": "Multi-scale Attention Network",
+          "recommended": false
+        },
+        {
+          "id": "Linknet",
+          "name": "LinkNet",
+          "description": "Fast encoder-decoder with additive skip connections",
+          "recommended": false
+        },
+        {
+          "id": "PAN",
+          "name": "PAN",
+          "description": "Pyramid Attention Network",
+          "recommended": false
+        }
+      ],
+      "encoders": [
+        {
+          "id": "resnet34",
+          "name": "ResNet-34",
+          "params_millions": 21,
+          "recommended": true
+        },
+        {
+          "id": "resnet50",
+          "name": "ResNet-50",
+          "params_millions": 25,
+          "recommended": false
+        },
+        {
+          "id": "resnet101",
+          "name": "ResNet-101",
+          "params_millions": 44,
+          "recommended": false
+        },
+        {
+          "id": "efficientnet-b0",
+          "name": "EfficientNet-B0",
+          "params_millions": 5,
+          "recommended": false
+        },
+        {
+          "id": "efficientnet-b3",
+          "name": "EfficientNet-B3",
+          "params_millions": 12,
+          "recommended": true
+        },
+        {
+          "id": "efficientnet-b5",
+          "name": "EfficientNet-B5",
+          "params_millions": 30,
+          "recommended": false
+        },
+        {
+          "id": "mobilenet_v2",
+          "name": "MobileNet-V2",
+          "params_millions": 3,
+          "recommended": false
+        },
+        {
+          "id": "timm-regnety_016",
+          "name": "RegNetY-016",
+          "params_millions": 11,
+          "recommended": false
+        },
+        {
+          "id": "timm-regnety_032",
+          "name": "RegNetY-032",
+          "params_millions": 19,
+          "recommended": false
+        },
+        {
+          "id": "mit_b0",
+          "name": "MiT-B0 (SegFormer)",
+          "params_millions": 4,
+          "recommended": false
+        },
+        {
+          "id": "mit_b2",
+          "name": "MiT-B2 (SegFormer)",
+          "params_millions": 25,
+          "recommended": false
+        }
+      ],
+      "pretrained_encoders": true,
+      "encoder_weights": "imagenet"
+    },
+    "custom": {
+      "name": "Custom Plugin",
+      "description": "Use your own command or script",
+      "license": "User-defined",
+      "is_custom": true,
+      "user_provides": {
+        "command": {
+          "required": true,
+          "description": "Command to execute (e.g., 'yolo', 'python3 script.py', './binary')",
+          "examples": [
+            "yolo",
+            "python3 my_plugin.py",
+            "./detector",
+            "docker run myimage"
+          ]
+        },
+        "requirements_file": {
+          "required": false,
+          "description": "Path to requirements.txt for Python dependencies",
+          "note": "Can include git repos: git+https://github.com/user/repo"
+        },
+        "env_setup": {
+          "required": false,
+          "description": "Environment setup command (e.g., source venv/bin/activate)"
+        }
+      },
+      "template_detect_args": "detect --image {image} --conf {confidence} --format json",
+      "template_train_args": "train --data {data_yaml} --epochs {epochs}",
+      "output_format": {
+        "description": "Plugin must output JSON to stdout",
+        "schema": {
+          "detections": [
+            {
+              "class": "string",
+              "class_id": "int",
+              "confidence": "float",
+              "points": "[[x1, y1], [x2, y2], ...]"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

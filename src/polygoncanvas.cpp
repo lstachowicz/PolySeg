@@ -69,7 +69,7 @@ PolygonCanvas::PolygonCanvas(QWidget* parent) : QLabel(parent)
 
 void PolygonCanvas::Increase()
 {
-  scalar_ = scalar_ + 1.0;
+  scalar_ = scalar_ + 1.0f;
 
   QSize size = pixmap().size();
   size.setWidth(static_cast<int>(size.width() * scalar_));
@@ -79,7 +79,7 @@ void PolygonCanvas::Increase()
 
 void PolygonCanvas::Decrease()
 {
-  auto new_scalar_ = scalar_ - 1.0;
+  auto new_scalar_ = scalar_ - 1.0f;
   if (new_scalar_ > 0)
   {
     scalar_ = new_scalar_;

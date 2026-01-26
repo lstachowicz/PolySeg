@@ -1,14 +1,16 @@
 #ifndef MODELCOMPARISONDIALOG_H
 #define MODELCOMPARISONDIALOG_H
 
-#include <QComboBox>
 #include <QDialog>
-#include <QLabel>
-#include <QPushButton>
 
 #include "projectconfig.h"
 
 class PolygonCanvas;
+
+namespace Ui
+{
+class ModelComparisonDialog;
+}
 
 class ModelComparisonDialog : public QDialog
 {
@@ -29,28 +31,17 @@ class ModelComparisonDialog : public QDialog
 
  private:
   void SetupUI();
+  void ConnectSignals();
   void LoadTestImages();
   void LoadImageAtIndex(int index);
   void RunDetectionOnModel(const QString& model_path, PolygonCanvas* canvas);
   QString GetModelPath(int model_index) const;
 
+  Ui::ModelComparisonDialog* ui_;
   ProjectConfig& config_;
   QString project_dir_;
   QStringList test_images_;
   int current_image_index_;
-
-  // UI components
-  QComboBox* model_a_combo_;
-  QComboBox* model_b_combo_;
-  QComboBox* image_combo_;
-  QPushButton* prev_button_;
-  QPushButton* next_button_;
-  QPushButton* compare_button_;
-
-  PolygonCanvas* canvas_a_;
-  PolygonCanvas* canvas_b_;
-  QLabel* stats_a_;
-  QLabel* stats_b_;
 };
 
 #endif  // MODELCOMPARISONDIALOG_H

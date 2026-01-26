@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CustomConfigurationPage</class>
+ <widget class="QWizardPage" name="CustomConfigurationPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>650</width>
+    <height>550</height>
+   </rect>
+  </property>
+  <property name="title">
+   <string>Custom Plugin Configuration</string>
+  </property>
+  <property name="subTitle">
+   <string>Configure command-line arguments and settings for your plugin.</string>
+  </property>
+  <layout class="QVBoxLayout" name="page_layout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QScrollArea" name="scroll_area">
+     <property name="frameShape">
+      <enum>QFrame::Shape::NoFrame</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="content_widget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>650</width>
+        <height>550</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="content_layout">
+       <property name="spacing">
+        <number>15</number>
+       </property>
+       <!-- Detection Arguments Group -->
+       <item>
+        <widget class="QGroupBox" name="detect_group">
+         <property name="title">
+          <string>Detection Arguments</string>
+         </property>
+         <layout class="QVBoxLayout" name="detect_layout">
+          <item>
+           <widget class="QLineEdit" name="detect_args_edit_">
+            <property name="placeholderText">
+             <string>detect --image {image} --model {model} --conf 0.5</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detect_help_label">
+            <property name="text">
+             <string>Available placeholders:
+  {image}   - Path to input image
+  {project} - Project directory
+  {model}   - Model path (from settings)
+  {output}  - Output path for results</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: #666; font-size: 11px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Training Arguments Group -->
+       <item>
+        <widget class="QGroupBox" name="train_group">
+         <property name="title">
+          <string>Training Arguments (optional)</string>
+         </property>
+         <layout class="QVBoxLayout" name="train_layout">
+          <item>
+           <widget class="QLineEdit" name="train_args_edit_">
+            <property name="placeholderText">
+             <string>train --data {data_yaml} --epochs 100</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="train_help_label">
+            <property name="text">
+             <string>Additional placeholders for training:
+  {data_yaml}    - Path to data.yaml
+  {splits}       - Splits directory
+  {train_count}  - Number of training images
+  {val_count}    - Number of validation images</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: #666; font-size: 11px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Custom Settings Group -->
+       <item>
+        <widget class="QGroupBox" name="settings_group">
+         <property name="title">
+          <string>Custom Settings (key=value pairs)</string>
+         </property>
+         <layout class="QVBoxLayout" name="settings_layout">
+          <item>
+           <widget class="QTableWidget" name="settings_table_">
+            <property name="maximumHeight">
+             <number>150</number>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+            </property>
+            <property name="columnCount">
+             <number>2</number>
+            </property>
+            <column>
+             <property name="text">
+              <string>Key</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Value</string>
+             </property>
+            </column>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="settings_buttons_layout">
+            <item>
+             <widget class="QPushButton" name="add_setting_button_">
+              <property name="text">
+               <string>Add Setting</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="remove_setting_button_">
+              <property name="text">
+               <string>Remove Selected</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="settings_spacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="settings_help_label">
+            <property name="text">
+             <string>These settings will be available as {key} placeholders</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">color: #666; font-size: 11px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <!-- Test Plugin Group -->
+       <item>
+        <widget class="QGroupBox" name="test_group">
+         <property name="title">
+          <string>Test Plugin</string>
+         </property>
+         <layout class="QVBoxLayout" name="test_layout">
+          <item>
+           <widget class="QPushButton" name="test_button_">
+            <property name="text">
+             <string>Test Plugin</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPlainTextEdit" name="test_output_">
+            <property name="maximumHeight">
+             <number>100</number>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="placeholderText">
+             <string>Test output will appear here...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

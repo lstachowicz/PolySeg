@@ -16,7 +16,13 @@ PluginConfig::PluginConfig()
       command("python3"),
       script_path(""),
       detect_args(""),
-      train_args("")
+      train_args(""),
+      plugin_id(""),
+      architecture(""),
+      backbone(""),
+      pretrained_model_id(""),
+      model_source(""),
+      use_project_venv(false)
 {
 }
 
@@ -38,6 +44,14 @@ QJsonObject PluginConfig::ToJson() const
   }
   obj["settings"] = settings_obj;
 
+  // Wizard-configured fields
+  obj["plugin_id"] = plugin_id;
+  obj["architecture"] = architecture;
+  obj["backbone"] = backbone;
+  obj["pretrained_model_id"] = pretrained_model_id;
+  obj["model_source"] = model_source;
+  obj["use_project_venv"] = use_project_venv;
+
   return obj;
 }
 
@@ -57,7 +71,7 @@ PluginConfig PluginConfig::FromJson(const QJsonObject& json)
   {
     pc.settings[it.key()] = it.value().toString();
   }
-  
+
   // Set defaults if not present
   if (!pc.settings.contains("base_model"))
   {
@@ -67,6 +81,14 @@ PluginConfig PluginConfig::FromJson(const QJsonObject& json)
   {
     pc.settings["model"] = "";
   }
+
+  // Wizard-configured fields
+  pc.plugin_id = json["plugin_id"].toString("");
+  pc.architecture = json["architecture"].toString("");
+  pc.backbone = json["backbone"].toString("");
+  pc.pretrained_model_id = json["pretrained_model_id"].toString("");
+  pc.model_source = json["model_source"].toString("");
+  pc.use_project_venv = json["use_project_venv"].toBool(false);
 
   return pc;
 }

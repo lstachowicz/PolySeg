@@ -1,27 +1,20 @@
 #include "aipluginmanager.h"
 
 #include <QCoreApplication>
-#include <QDialog>
 #include <QDir>
 #include <QDirIterator>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
-#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QLabel>
-#include <QLineEdit>
 #include <QMessageBox>
-#include <QPushButton>
 #include <QStatusBar>
-#include <QTextEdit>
 #include <QTextStream>
-#include <QVBoxLayout>
 
 #include <iostream>
 
+#include "modelregistrationdialog.h"
 #include "polygoncanvas.h"
 #include "projectconfig.h"
 
@@ -1217,21 +1210,6 @@ void AIPluginManager::RegisterModelManually()
     return;
   }
 
-  // Create dialog for model registration
-  QDialog dialog;
-  dialog.setWindowTitle("Register Model Version");
-  dialog.setMinimumWidth(500);
-
-  QVBoxLayout* layout = new QVBoxLayout(&dialog);
-
-  // Name field
-  QHBoxLayout* name_layout = new QHBoxLayout();
-  name_layout->addWidget(new QLabel("Model Name:"));
-  QLineEdit* name_edit = new QLineEdit();
-
-  // Auto-generate default name
-  int model_count = project_config_->GetModelVersions().size() + 1;
-
   // Count labeled images
   int labeled_count = 0;
   QString labels_dir = project_directory_ + "/labels";
@@ -1244,79 +1222,20 @@ void AIPluginManager::RegisterModelManually()
     }
   }
 
-  QString default_name = QString("model_v%1_%2imgs").arg(model_count).arg(labeled_count);
-  name_edit->setText(default_name);
-  name_layout->addWidget(name_edit);
-  layout->addLayout(name_layout);
+  int model_count = project_config_->GetModelVersions().size() + 1;
 
-  // Path field
-  QHBoxLayout* path_layout = new QHBoxLayout();
-  path_layout->addWidget(new QLabel("Model Path:"));
-  QLineEdit* path_edit = new QLineEdit();
-  path_edit->setText("models/best.pt");  // Set default value
-  path_edit->setPlaceholderText("models/best.pt");
-  path_layout->addWidget(path_edit);
-
-  QPushButton* browse_button = new QPushButton("Browse...");
-  connect(browse_button, &QPushButton::clicked, [this, path_edit, &dialog]() {
-    QString models_dir = project_directory_ + "/models";
-    QString file = QFileDialog::getOpenFileName(&dialog, "Select Model File", models_dir,
-                                                "Model Files (*.pt *.pth *.onnx *.h5)");
-    if (!file.isEmpty())
-    {
-      // Make relative to project directory
-      QDir project_dir(project_directory_);
-      path_edit->setText(project_dir.relativeFilePath(file));
-    }
-  });
-  path_layout->addWidget(browse_button);
-  layout->addLayout(path_layout);
-
-  // Training count (auto-filled, read-only)
-  QHBoxLayout* count_layout = new QHBoxLayout();
-  count_layout->addWidget(new QLabel("Training Images:"));
-  QLineEdit* count_edit = new QLineEdit();
-  count_edit->setText(QString::number(labeled_count));
-  count_edit->setReadOnly(true);
-  count_layout->addWidget(count_edit);
-  layout->addLayout(count_layout);
-
-  // Notes field
-  layout->addWidget(new QLabel("Notes:"));
-  QTextEdit* notes_edit = new QTextEdit();
-  notes_edit->setPlaceholderText(
-      "Optional notes about this model (e.g., hyperparameters, "
-      "performance, purpose)");
-  notes_edit->setMaximumHeight(100);
-  layout->addWidget(notes_edit);
-
-  // Buttons
-  QHBoxLayout* button_layout = new QHBoxLayout();
-  button_layout->addStretch();
-  QPushButton* ok_button = new QPushButton("Register");
-  QPushButton* cancel_button = new QPushButton("Cancel");
-  button_layout->addWidget(ok_button);
-  button_layout->addWidget(cancel_button);
-  layout->addLayout(button_layout);
-
-  connect(ok_button, &QPushButton::clicked, &dialog, &QDialog::accept);
-  connect(cancel_button, &QPushButton::clicked, &dialog, &QDialog::reject);
+  ModelRegistrationDialog dialog(project_directory_, model_count, labeled_count);
 
   if (dialog.exec() == QDialog::Accepted)
   {
-    QString name = name_edit->text().trimmed();
-    QString path = path_edit->text().trimmed();
-    QString notes = notes_edit->toPlainText().trimmed();
+    QString name = dialog.GetModelName();
+    QString path = dialog.GetModelPath();
+    QString notes = dialog.GetNotes();
 
     if (name.isEmpty())
     {
       QMessageBox::warning(nullptr, "Invalid Input", "Model name cannot be empty.");
       return;
-    }
-
-    if (path.isEmpty())
-    {
-      path = "models/best.pt";
     }
 
     // Create ModelVersion

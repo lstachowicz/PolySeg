@@ -1,0 +1,574 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AIModelSettingsTab</class>
+ <widget class="QWidget" name="AIModelSettingsTab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>750</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout">
+   <!-- AI Plugin Configuration Group -->
+   <item>
+    <widget class="QGroupBox" name="plugin_group">
+     <property name="title">
+      <string>AI Plugin Configuration</string>
+     </property>
+     <layout class="QVBoxLayout" name="plugin_layout">
+      <item>
+       <widget class="QLabel" name="plugin_info_label">
+        <property name="text">
+         <string>Configure AI plugin for automatic detection and model training. Supports any framework (PyTorch, TensorFlow, ONNX) via command-line interface.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: gray; font-size: 10px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="plugin_wizard_button_">
+        <property name="text">
+         <string>Run Plugin Wizard...</string>
+        </property>
+        <property name="toolTip">
+         <string>Launch the step-by-step wizard to configure an AI plugin</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="plugin_enabled_checkbox_">
+        <property name="text">
+         <string>Enable AI Plugin</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="plugin_form_layout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="plugin_name_label">
+          <property name="text">
+           <string>Plugin Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="plugin_name_edit_"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="plugin_env_label">
+          <property name="text">
+           <string>Env Setup:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="plugin_env_setup_edit_">
+          <property name="placeholderText">
+           <string>e.g., source venv/bin/activate</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="plugin_command_label">
+          <property name="text">
+           <string>Command:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="plugin_command_edit_"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="plugin_script_label">
+          <property name="text">
+           <string>Script Path:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <layout class="QHBoxLayout" name="script_layout">
+          <item>
+           <widget class="QLineEdit" name="plugin_script_edit_"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="browse_script_button_">
+            <property name="text">
+             <string>Browse...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="plugin_detect_label">
+          <property name="text">
+           <string>Detect Args:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="plugin_detect_args_edit_"/>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="plugin_train_label">
+          <property name="text">
+           <string>Train Args:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QLineEdit" name="plugin_train_args_edit_"/>
+        </item>
+       </layout>
+      </item>
+      <!-- Plugin Settings SubGroup -->
+      <item>
+       <widget class="QGroupBox" name="plugin_settings_subgroup">
+        <property name="title">
+         <string>Plugin Settings</string>
+        </property>
+        <layout class="QVBoxLayout" name="plugin_settings_layout">
+         <item>
+          <widget class="QLabel" name="plugin_settings_info_label">
+           <property name="text">
+            <string>Add custom key-value settings for your plugin (e.g., model path, confidence threshold). These will be available as {key} variables in Detect/Train Args.</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">color: gray; font-size: 10px;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTableWidget" name="plugin_settings_table_">
+           <property name="maximumHeight">
+            <number>120</number>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+           </property>
+           <property name="columnCount">
+            <number>2</number>
+           </property>
+           <column>
+            <property name="text">
+             <string>Key</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Value</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="plugin_settings_buttons_layout">
+           <item>
+            <widget class="QPushButton" name="add_plugin_setting_button_">
+             <property name="text">
+              <string>Add Setting</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="remove_plugin_setting_button_">
+             <property name="text">
+              <string>Remove Selected</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="plugin_settings_spacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="variable_help_label">
+        <property name="text">
+         <string>&lt;b&gt;Variable Substitution:&lt;/b&gt; {image}, {project}, {model}, {confidence}, or any custom {key}</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: gray; font-size: 10px;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <!-- Dataset Splits Group -->
+   <item>
+    <widget class="QGroupBox" name="splits_group">
+     <property name="title">
+      <string>Dataset Splits (Train/Val/Test)</string>
+     </property>
+     <layout class="QVBoxLayout" name="splits_layout">
+      <item>
+       <widget class="QLabel" name="splits_info_label">
+        <property name="text">
+         <string>Configure train/validation/test splits for model training. Splits are deterministic based on filename hash.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: gray; font-size: 10px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="splits_enabled_checkbox_">
+        <property name="text">
+         <string>Enable train/val/test splits</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="ratios_layout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="train_label">
+          <property name="text">
+           <string>Train:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="train_layout">
+          <item>
+           <widget class="QSlider" name="train_ratio_slider_">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>70</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="train_ratio_label_">
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>70%</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="val_label">
+          <property name="text">
+           <string>Validation:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <layout class="QHBoxLayout" name="val_layout">
+          <item>
+           <widget class="QSlider" name="val_ratio_slider_">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>20</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="val_ratio_label_">
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>20%</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="test_label">
+          <property name="text">
+           <string>Test:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <layout class="QHBoxLayout" name="test_layout">
+          <item>
+           <widget class="QSlider" name="test_ratio_slider_">
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>100</number>
+            </property>
+            <property name="value">
+             <number>10</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="test_ratio_label_">
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>10%</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="split_statistics_label_">
+        <property name="text">
+         <string>Target: 70/20/10% | Actual: calculating...</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel { padding: 10px; background-color: #f0f0f0; border-radius: 5px; }</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="salt_layout">
+        <item>
+         <widget class="QLabel" name="salt_label">
+          <property name="text">
+           <string>Random Seed (Salt):</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="salt_edit_">
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="salt_help_label">
+        <property name="text">
+         <string>The salt ensures consistent train/val/test splits across sessions. Each image is assigned to a split based on a hash of its filename combined with this salt. Resetting splits generates a new salt, which redistributes all images to different splits. Keep the same salt to maintain reproducible dataset partitions.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: gray; font-size: 10px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="reset_layout">
+        <item>
+         <spacer name="reset_spacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="reset_splits_button_">
+          <property name="text">
+           <string>Reset All Splits</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QPushButton { color: red; }</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <!-- Model Versions Group -->
+   <item>
+    <widget class="QGroupBox" name="models_group">
+     <property name="title">
+      <string>Model Versions</string>
+     </property>
+     <layout class="QVBoxLayout" name="models_layout">
+      <item>
+       <widget class="QLabel" name="models_info_label">
+        <property name="text">
+         <string>Track trained model versions with metadata. Register models after training to compare performance and maintain version history.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">color: gray; font-size: 10px;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableWidget" name="model_versions_table_">
+        <property name="maximumHeight">
+         <number>250</number>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+        </property>
+        <property name="columnCount">
+         <number>5</number>
+        </property>
+        <column>
+         <property name="text">
+          <string>Name</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Date</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Images Count</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Path</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Notes</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="model_buttons_layout">
+        <item>
+         <widget class="QPushButton" name="add_model_button_">
+          <property name="text">
+           <string>Add Model</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="edit_notes_button_">
+          <property name="text">
+           <string>Edit Notes</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="compare_models_button_">
+          <property name="text">
+           <string>Compare Models...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="model_buttons_spacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="remove_model_button_">
+          <property name="text">
+           <string>Remove Entry</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="bottom_spacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

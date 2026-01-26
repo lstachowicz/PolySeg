@@ -1,7 +1,7 @@
 # GitHub Copilot Instructions for PolySeg
 
 ## Project Overview
-PolySeg is a Qt6-based polygon annotation tool for creating instance segmentation datasets. The application enables interactive drawing, editing, and management of polygon annotations on images, exporting to normalized coordinate format compatible with various deep learning frameworks through plugin architecture.
+PolySeg is a secure offline polygon annotation tool for creating instance segmentation datasets. The application enables interactive drawing, editing, and management of polygon annotations on images, exporting to normalized coordinate format compatible with various deep learning frameworks through plugin architecture.
 
 ## Code Standards and Language Requirements
 
@@ -54,7 +54,7 @@ feat(canvas): add multi-polygon selection support
 
 fix(plugins): resolve memory leak in AI model loading
 
-docs: update build instructions for Qt 6.4
+docs: update build instructions
 
 refactor(mainwindow): extract file dialog logic to separate method
 ```
@@ -192,8 +192,8 @@ painter.drawLine(p1, p2);
 - Verify annotation format: Check .txt file has multiple lines
 
 ## Dependencies
-- Qt 6.5.3 (Core, Widgets, GUI)
 - C++17 compiler
+- qmake build system
 - Future: OpenCV (for AI features in Phase 7)
 
 ## Notes for AI Assistance
@@ -279,14 +279,12 @@ Example:
 
 ## Technologies:
 
-- Qt 6.5.3
-- C++
+- C++17
 - QPainter for 2D graphics
-- Qt Designer for UI
 
 ## Build:
 
-Project uses Qt Creator and qmake. Build from the `build` directory:
+Build from the `build` directory:
 ```bash
 cd build
 qmake ../PolySeg.pro

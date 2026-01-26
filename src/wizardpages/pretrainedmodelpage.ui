@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PretrainedModelPage</class>
+ <widget class="QWizardPage" name="PretrainedModelPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="page_layout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>600</width>
+        <height>500</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="main_layout">
+       <property name="spacing">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="mode_group_box_">
+         <property name="title">
+          <string>Would you like to use a pre-trained model?</string>
+         </property>
+         <layout class="QVBoxLayout" name="mode_layout">
+          <item>
+           <widget class="QRadioButton" name="download_radio_">
+            <property name="text">
+             <string>Download pre-trained model (Recommended for new users)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="download_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>Start with a model trained on COCO dataset</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="scratch_radio_">
+            <property name="text">
+             <string>Start from scratch</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="scratch_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>Train your own model from random weights</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="existing_radio_">
+            <property name="text">
+             <string>Use existing model file</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="existing_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>Select a .pt/.pth file from disk</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="pretrained_models_widget_" native="true">
+         <layout class="QVBoxLayout" name="pretrained_layout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="models_label_">
+            <property name="styleSheet">
+             <string notr="true">font-weight: bold;</string>
+            </property>
+            <property name="text">
+             <string>Available pre-trained models:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="existing_model_widget_" native="true">
+         <layout class="QHBoxLayout" name="existing_layout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLineEdit" name="existing_model_edit_">
+            <property name="placeholderText">
+             <string>Select model file...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="browse_existing_button_">
+            <property name="text">
+             <string>Browse...</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

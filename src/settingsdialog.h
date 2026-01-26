@@ -4,11 +4,14 @@
 #include <QDialog>
 #include <QList>
 #include <QMap>
-#include <QPushButton>
-#include <QTabWidget>
 
 #include "projectconfig.h"
 #include "settingstabbase.h"
+
+namespace Ui
+{
+class SettingsDialog;
+}
 
 class ShortcutsSettingsTab;
 
@@ -19,6 +22,7 @@ class SettingsDialog : public QDialog
  public:
   explicit SettingsDialog(ProjectConfig& config, const QString& project_dir,
                          QWidget* parent = nullptr);
+  ~SettingsDialog();
 
   ProjectConfig GetConfig() const { return config_; }
 
@@ -27,6 +31,7 @@ class SettingsDialog : public QDialog
 
  signals:
   void RequestModelRegistration();
+  void RequestPluginWizard();
   void ShortcutsChanged(const QMap<QString, QString>& shortcuts);
 
  public slots:
@@ -37,21 +42,18 @@ class SettingsDialog : public QDialog
   void OnSave();
 
  private:
-  void SetupUI();
+  void SetupTabs();
   void LoadAllTabs();
   void SaveAllTabs();
+  void ConnectSignals();
 
+  Ui::SettingsDialog* ui_;
   ProjectConfig config_;
   ProjectConfig original_config_;
   QString project_dir_;
 
-  QTabWidget* tab_widget_;
   QList<BaseSettingsTab*> tabs_;
   ShortcutsSettingsTab* shortcuts_tab_;
-
-  QPushButton* apply_button_;
-  QPushButton* save_button_;
-  QPushButton* cancel_button_;
 };
 
 #endif  // SETTINGSDIALOG_H
