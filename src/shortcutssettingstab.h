@@ -4,8 +4,11 @@
 #include "settingstabbase.h"
 
 #include <QMap>
-#include <QPushButton>
-#include <QTableWidget>
+
+namespace Ui
+{
+class ShortcutsSettingsTab;
+}
 
 /**
  * @brief Settings tab for keyboard shortcuts configuration
@@ -20,6 +23,7 @@ class ShortcutsSettingsTab : public BaseSettingsTab
 
  public:
   explicit ShortcutsSettingsTab(QWidget* parent = nullptr);
+  ~ShortcutsSettingsTab() override;
 
   // BaseSettingsTab interface (no-op - shortcuts use QSettings, not ProjectConfig)
   void LoadFromConfig(const ProjectConfig&) override {}
@@ -46,9 +50,7 @@ class ShortcutsSettingsTab : public BaseSettingsTab
   void PopulateTable();
   bool ValidateShortcut(const QString& shortcut, int current_row);
 
-  QTableWidget* table_;
-  QPushButton* reset_button_;
-
+  Ui::ShortcutsSettingsTab* ui_;
   QMap<QString, QString> shortcuts_;
   QMap<QString, QString> default_shortcuts_;
 };

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PluginSelectionPage</class>
+ <widget class="QWizardPage" name="PluginSelectionPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="page_layout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>600</width>
+        <height>500</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="main_layout">
+       <property name="spacing">
+        <number>15</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="detectron2_card_">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame { background-color: #ffffff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; }
+QFrame:hover { border-color: #0078d4; }</string>
+         </property>
+         <layout class="QVBoxLayout" name="detectron2_layout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QRadioButton" name="detectron2_radio_">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Detectron2 (Recommended)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detectron2_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>Meta AI's detection library</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detectron2_feature1_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Best for: Instance segmentation</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detectron2_feature2_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Models: Mask R-CNN, Cascade R-CNN</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detectron2_feature3_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  License: Apache 2.0 (commercial OK)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="detectron2_feature4_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  GPU recommended, CPU possible</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="smp_card_">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame { background-color: #ffffff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; }
+QFrame:hover { border-color: #0078d4; }</string>
+         </property>
+         <layout class="QVBoxLayout" name="smp_layout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QRadioButton" name="smp_radio_">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Segmentation Models PyTorch (SMP)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="smp_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>500+ encoder/decoder combinations</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="smp_feature1_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Best for: Semantic segmentation</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="smp_feature2_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Models: UNet, DeepLabV3+, FPN, etc.</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="smp_feature3_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  License: MIT (commercial OK)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="smp_feature4_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Lighter models, faster training</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="custom_card_">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QFrame { background-color: #ffffff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; }
+QFrame:hover { border-color: #0078d4; }</string>
+         </property>
+         <layout class="QVBoxLayout" name="custom_layout">
+          <property name="spacing">
+           <number>5</number>
+          </property>
+          <item>
+           <widget class="QRadioButton" name="custom_radio_">
+            <property name="font">
+             <font>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Custom Plugin</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="custom_desc_">
+            <property name="styleSheet">
+             <string notr="true">color: #666; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>Use your own executable or script</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="custom_feature1_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Any Linux application (Python, C++, Rust, etc.)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="custom_feature2_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  Optional requirements.txt for Python plugins</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="custom_feature3_">
+            <property name="styleSheet">
+             <string notr="true">color: #444; margin-left: 20px;</string>
+            </property>
+            <property name="text">
+             <string>  (Advanced users)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

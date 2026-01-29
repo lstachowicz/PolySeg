@@ -95,6 +95,8 @@
     <property name="title">
      <string>AI Tools</string>
     </property>
+    <addaction name="actionPluginWizard"/>
+    <addaction name="separator"/>
     <addaction name="actionAutoDetect"/>
     <addaction name="actionBatchDetect"/>
     <addaction name="separator"/>
@@ -458,6 +460,14 @@
    </property>
    <property name="toolTip">
     <string>Show detailed project statistics</string>
+   </property>
+  </action>
+  <action name="actionPluginWizard">
+   <property name="text">
+    <string>Plugin Wizard...</string>
+   </property>
+   <property name="toolTip">
+    <string>Plugin Wizard - Configure AI plugin for segmentation detection</string>
    </property>
   </action>
  </widget>

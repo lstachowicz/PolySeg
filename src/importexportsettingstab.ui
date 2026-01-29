@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ImportExportSettingsTab</class>
+ <widget class="QWidget" name="ImportExportSettingsTab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout_">
+   <item>
+    <widget class="QScrollArea" name="scroll_area_">
+     <property name="frameShape">
+      <enum>QFrame::Shape::NoFrame</enum>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scroll_content_">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>580</width>
+        <height>680</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="content_layout_">
+       <item>
+        <widget class="QGroupBox" name="import_group_">
+         <property name="title">
+          <string>Import Settings</string>
+         </property>
+         <layout class="QVBoxLayout" name="import_layout_">
+          <item>
+           <widget class="QLabel" name="crop_title_label_">
+            <property name="text">
+             <string>&lt;b&gt;Image Crop (Preprocessing)&lt;/b&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="crop_enabled_checkbox_">
+            <property name="text">
+             <string>Enable automatic image cropping on load</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QFormLayout" name="crop_form_layout_">
+            <item row="0" column="0">
+             <widget class="QLabel" name="crop_x_label_">
+              <property name="text">
+               <string>X (left):</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="crop_x_spinbox_">
+              <property name="suffix">
+               <string> px</string>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="crop_y_label_">
+              <property name="text">
+               <string>Y (top):</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="crop_y_spinbox_">
+              <property name="suffix">
+               <string> px</string>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="crop_width_label_">
+              <property name="text">
+               <string>Width:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QSpinBox" name="crop_width_spinbox_">
+              <property name="suffix">
+               <string> px (0 = full width)</string>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="crop_height_label_">
+              <property name="text">
+               <string>Height:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QSpinBox" name="crop_height_spinbox_">
+              <property name="suffix">
+               <string> px (0 = full height)</string>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="path_title_label_">
+            <property name="text">
+             <string>&lt;b&gt;Import Path Configuration&lt;/b&gt;</string>
+            </property>
+            <property name="margin">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="base_path_layout_">
+            <item>
+             <widget class="QLabel" name="base_path_label_">
+              <property name="text">
+               <string>Base Path to Strip:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="import_base_path_edit_">
+              <property name="placeholderText">
+               <string>/path/to/base/directory</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="browse_import_base_path_button_">
+              <property name="text">
+               <string>Browse...</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="skip_folders_label_">
+            <property name="text">
+             <string>Folders to Skip in Prefix:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="skip_folders_layout_">
+            <item>
+             <widget class="QListWidget" name="skip_folders_list_">
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>100</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="skip_buttons_layout_">
+              <item>
+               <widget class="QPushButton" name="add_skip_folder_button_">
+                <property name="text">
+                 <string>Add</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="remove_skip_folder_button_">
+                <property name="text">
+                 <string>Remove</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="skip_buttons_spacer_">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QLabel" name="extensions_title_label_">
+            <property name="text">
+             <string>&lt;b&gt;Supported Image Extensions&lt;/b&gt;</string>
+            </property>
+            <property name="margin">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="image_extensions_edit_">
+            <property name="placeholderText">
+             <string>jpg, jpeg, png, bmp, tiff</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="export_group_">
+         <property name="title">
+          <string>Export Settings</string>
+         </property>
+         <layout class="QFormLayout" name="export_layout_">
+          <item row="0" column="0">
+           <widget class="QLabel" name="export_format_label_">
+            <property name="text">
+             <string>Export Format:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="export_format_combo_">
+            <item>
+             <property name="text">
+              <string>Segmentation (normalized)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Bounding Box (normalized)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QCheckBox" name="normalize_coords_checkbox_">
+            <property name="text">
+             <string>Normalize coordinates (0.0 - 1.0)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="coord_precision_label_">
+            <property name="text">
+             <string>Coordinate Precision:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <layout class="QHBoxLayout" name="precision_layout_">
+            <item>
+             <widget class="QSpinBox" name="coord_precision_spinbox_">
+              <property name="suffix">
+               <string> decimal places</string>
+              </property>
+              <property name="maximum">
+               <number>10</number>
+              </property>
+              <property name="value">
+               <number>6</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="precision_spacer_">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="bottom_spacer_">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

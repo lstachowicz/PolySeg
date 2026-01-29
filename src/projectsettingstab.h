@@ -3,16 +3,12 @@
 
 #include "settingstabbase.h"
 
-#include <QCheckBox>
-#include <QComboBox>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QSlider>
-#include <QSpinBox>
-#include <QTableWidget>
-
 class ProjectConfig;
+
+namespace Ui
+{
+class ProjectSettingsTab;
+}
 
 /**
  * @brief Settings tab for project configuration
@@ -30,7 +26,7 @@ class ProjectSettingsTab : public BaseSettingsTab
  public:
   explicit ProjectSettingsTab(ProjectConfig& config, const QString& project_dir,
                              QWidget* parent = nullptr);
-  ~ProjectSettingsTab() override = default;
+  ~ProjectSettingsTab() override;
 
   // BaseSettingsTab interface
   void LoadFromConfig(const ProjectConfig& config) override;
@@ -53,30 +49,9 @@ class ProjectSettingsTab : public BaseSettingsTab
   void OnBrowseLabelsFolder();
 
  private:
+  Ui::ProjectSettingsTab* ui_;
   ProjectConfig& config_;
   QString project_dir_;
-
-  // Basic settings
-  QLineEdit* project_name_edit_;
-  QComboBox* annotation_type_combo_;
-
-  // Auto-save settings
-  QCheckBox* auto_save_checkbox_;
-  QSpinBox* auto_save_interval_spinbox_;
-
-  // Classes
-  QTableWidget* classes_table_;
-  QPushButton* add_class_button_;
-  QPushButton* edit_class_button_;
-  QPushButton* remove_class_button_;
-  QPushButton* move_up_button_;
-  QPushButton* move_down_button_;
-
-  // Custom folder paths
-  QLineEdit* images_folder_edit_;
-  QLineEdit* labels_folder_edit_;
-  QPushButton* browse_images_button_;
-  QPushButton* browse_labels_button_;
 };
 
 #endif  // PROJECTSETTINGSTAB_H

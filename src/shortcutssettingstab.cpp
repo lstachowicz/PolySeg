@@ -1,18 +1,22 @@
 #include "shortcutssettingstab.h"
 
-#include <QGroupBox>
 #include <QHeaderView>
-#include <QLabel>
 #include <QMessageBox>
 #include <QSettings>
-#include <QVBoxLayout>
 
 #include "shortcuteditdialog.h"
+#include "ui_shortcutssettingstab.h"
 
-ShortcutsSettingsTab::ShortcutsSettingsTab(QWidget* parent) : BaseSettingsTab(parent)
+ShortcutsSettingsTab::ShortcutsSettingsTab(QWidget* parent)
+    : BaseSettingsTab(parent), ui_(new Ui::ShortcutsSettingsTab)
 {
   InitializeDefaultShortcuts();
   shortcuts_ = default_shortcuts_;
+}
+
+ShortcutsSettingsTab::~ShortcutsSettingsTab()
+{
+  delete ui_;
 }
 
 void ShortcutsSettingsTab::InitializeDefaultShortcuts()
@@ -44,48 +48,19 @@ void ShortcutsSettingsTab::InitializeDefaultShortcuts()
 
 void ShortcutsSettingsTab::SetupUI()
 {
-  QVBoxLayout* main_layout = GetMainLayout();
+  ui_->setupUi(this);
 
-  // Info section
-  QLabel* info = new QLabel(
-      "Click on a shortcut cell to edit it. Press a key combination to assign a new shortcut.");
-  info->setWordWrap(true);
-  info->setStyleSheet("color: gray; font-size: 10px;");
-  main_layout->addWidget(info);
-
-  // Shortcuts table
-  QGroupBox* shortcuts_group = new QGroupBox("Keyboard Shortcuts");
-  QVBoxLayout* group_layout = new QVBoxLayout(shortcuts_group);
-
-  table_ = new QTableWidget();
-  table_->setColumnCount(3);
-  table_->setHorizontalHeaderLabels({"Action", "Shortcut", "Default"});
-  table_->horizontalHeader()->setStretchLastSection(true);
-  table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-  table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  table_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-  table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-  group_layout->addWidget(table_);
-
-  // Reset button
-  QHBoxLayout* button_layout = new QHBoxLayout();
-  button_layout->addStretch();
-
-  reset_button_ = new QPushButton("Reset to Defaults");
-  button_layout->addWidget(reset_button_);
-
-  group_layout->addLayout(button_layout);
-
-  main_layout->addWidget(shortcuts_group);
-  main_layout->addStretch();
+  // Configure table headers
+  ui_->table_->horizontalHeader()->setStretchLastSection(true);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 }
 
 void ShortcutsSettingsTab::ConnectSignals()
 {
-  connect(table_, &QTableWidget::cellClicked, this, &ShortcutsSettingsTab::OnCellClicked);
-  connect(reset_button_, &QPushButton::clicked, this, &ShortcutsSettingsTab::OnResetDefaults);
+  connect(ui_->table_, &QTableWidget::cellClicked, this, &ShortcutsSettingsTab::OnCellClicked);
+  connect(ui_->reset_button_, &QPushButton::clicked, this, &ShortcutsSettingsTab::OnResetDefaults);
 }
 
 void ShortcutsSettingsTab::LoadShortcuts()
@@ -135,19 +110,19 @@ void ShortcutsSettingsTab::SaveShortcuts()
 
 void ShortcutsSettingsTab::PopulateTable()
 {
-  table_->setRowCount(shortcuts_.size());
+  ui_->table_->setRowCount(shortcuts_.size());
 
   int row = 0;
   for (auto it = shortcuts_.begin(); it != shortcuts_.end(); ++it)
   {
     // Action name
     QTableWidgetItem* action_item = new QTableWidgetItem(it.key());
-    table_->setItem(row, 0, action_item);
+    ui_->table_->setItem(row, 0, action_item);
 
     // Current shortcut
     QTableWidgetItem* shortcut_item = new QTableWidgetItem(it.value());
     shortcut_item->setTextAlignment(Qt::AlignCenter);
-    table_->setItem(row, 1, shortcut_item);
+    ui_->table_->setItem(row, 1, shortcut_item);
 
     // Default shortcut
     QString default_sc = default_shortcuts_.value(it.key(), "");
@@ -155,7 +130,7 @@ void ShortcutsSettingsTab::PopulateTable()
     default_item->setTextAlignment(Qt::AlignCenter);
     default_item->setFlags(default_item->flags() & ~Qt::ItemIsEditable);
     default_item->setForeground(QBrush(Qt::gray));
-    table_->setItem(row, 2, default_item);
+    ui_->table_->setItem(row, 2, default_item);
 
     row++;
   }
@@ -166,7 +141,7 @@ void ShortcutsSettingsTab::OnCellClicked(int row, int column)
   if (column != 1)
     return;  // Only edit shortcut column
 
-  QString action = table_->item(row, 0)->text();
+  QString action = ui_->table_->item(row, 0)->text();
   QString current = shortcuts_.value(action);
 
   ShortcutEditDialog dialog(action, current, this);
@@ -178,7 +153,7 @@ void ShortcutsSettingsTab::OnCellClicked(int row, int column)
     if (ValidateShortcut(new_shortcut, row))
     {
       shortcuts_[action] = new_shortcut;
-      table_->item(row, 1)->setText(new_shortcut);
+      ui_->table_->item(row, 1)->setText(new_shortcut);
     }
   }
 }

@@ -1,8 +1,8 @@
 #include "aimodelsettingstab.h"
 
 #include <QFileDialog>
-#include <QGroupBox>
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
@@ -12,214 +12,58 @@
 
 #include "modelcomparisondialog.h"
 #include "projectconfig.h"
+#include "ui_aimodelsettingstab.h"
 
 AIModelSettingsTab::AIModelSettingsTab(ProjectConfig& config, const QString& project_dir,
                                        QWidget* parent)
-    : BaseSettingsTab(parent), config_(config), project_dir_(project_dir)
+    : BaseSettingsTab(parent), ui_(new Ui::AIModelSettingsTab), config_(config), project_dir_(project_dir)
 {
+}
+
+AIModelSettingsTab::~AIModelSettingsTab()
+{
+  delete ui_;
 }
 
 void AIModelSettingsTab::SetupUI()
 {
-  QVBoxLayout* main_layout = GetMainLayout();
+  // Setup UI from .ui file
+  ui_->setupUi(this);
 
-  // ===== Plugin Configuration =====
-  QGroupBox* plugin_group = new QGroupBox("AI Plugin Configuration");
-  QVBoxLayout* plugin_layout = new QVBoxLayout(plugin_group);
-
-  QLabel* plugin_info = new QLabel(
-      "Configure AI plugin for automatic detection and model training. "
-      "Supports any framework (PyTorch, TensorFlow, ONNX) via command-line interface.");
-  plugin_info->setWordWrap(true);
-  plugin_info->setStyleSheet("color: gray; font-size: 10px;");
-  plugin_layout->addWidget(plugin_info);
-
-  plugin_enabled_checkbox_ = new QCheckBox("Enable AI Plugin");
-  plugin_layout->addWidget(plugin_enabled_checkbox_);
-
-  QFormLayout* plugin_form = new QFormLayout();
-
-  plugin_name_edit_ = new QLineEdit();
-  plugin_form->addRow("Plugin Name:", plugin_name_edit_);
-
-  plugin_env_setup_edit_ = new QLineEdit();
-  plugin_env_setup_edit_->setPlaceholderText("e.g., source venv/bin/activate");
-  plugin_form->addRow("Env Setup:", plugin_env_setup_edit_);
-
-  plugin_command_edit_ = new QLineEdit();
-  plugin_form->addRow("Command:", plugin_command_edit_);
-
-  QHBoxLayout* script_layout = new QHBoxLayout();
-  plugin_script_edit_ = new QLineEdit();
-  browse_script_button_ = new QPushButton("Browse...");
-  script_layout->addWidget(plugin_script_edit_);
-  script_layout->addWidget(browse_script_button_);
-  plugin_form->addRow("Script Path:", script_layout);
-
-  plugin_detect_args_edit_ = new QLineEdit();
-  plugin_form->addRow("Detect Args:", plugin_detect_args_edit_);
-
-  plugin_train_args_edit_ = new QLineEdit();
-  plugin_form->addRow("Train Args:", plugin_train_args_edit_);
-
-  plugin_layout->addLayout(plugin_form);
-
-  // Plugin Settings
-  QGroupBox* settings_subgroup = new QGroupBox("Plugin Settings");
-  QVBoxLayout* settings_subgroup_layout = new QVBoxLayout(settings_subgroup);
-
-  QLabel* settings_info = new QLabel(
-      "Add custom key-value settings for your plugin (e.g., model path, confidence threshold). "
-      "These will be available as {key} variables in Detect/Train Args.");
-  settings_info->setWordWrap(true);
-  settings_info->setStyleSheet("color: gray; font-size: 10px;");
-  settings_subgroup_layout->addWidget(settings_info);
-
-  plugin_settings_layout_ = new QFormLayout();
-  add_plugin_setting_button_ = new QPushButton("Add Setting");
-  plugin_settings_layout_->addRow("", add_plugin_setting_button_);
-  settings_subgroup_layout->addLayout(plugin_settings_layout_);
-
-  plugin_layout->addWidget(settings_subgroup);
-
-  QLabel* help_label =
-      new QLabel("<b>Variable Substitution:</b> {image}, {project}, {model}, {confidence}, or any custom {key}");
-  help_label->setWordWrap(true);
-  help_label->setStyleSheet("color: gray; font-size: 10px;");
-  plugin_layout->addWidget(help_label);
-
-  main_layout->addWidget(plugin_group);
-
-  // ===== Dataset Splits =====
-  QGroupBox* splits_group = new QGroupBox("Dataset Splits (Train/Val/Test)");
-  QVBoxLayout* splits_layout = new QVBoxLayout(splits_group);
-
-  QLabel* splits_info = new QLabel(
-      "Configure train/validation/test splits for model training. "
-      "Splits are deterministic based on filename hash.");
-  splits_info->setWordWrap(true);
-  splits_info->setStyleSheet("color: gray; font-size: 10px;");
-  splits_layout->addWidget(splits_info);
-
-  splits_enabled_checkbox_ = new QCheckBox("Enable train/val/test splits");
-  splits_layout->addWidget(splits_enabled_checkbox_);
-
-  QFormLayout* ratios_layout = new QFormLayout();
-
-  QHBoxLayout* train_layout = new QHBoxLayout();
-  train_ratio_slider_ = new QSlider(Qt::Horizontal);
-  train_ratio_slider_->setRange(0, 100);
-  train_ratio_slider_->setValue(70);
-  train_ratio_label_ = new QLabel("70%");
-  train_layout->addWidget(train_ratio_slider_, 1);
-  train_layout->addWidget(train_ratio_label_);
-  ratios_layout->addRow("Train:", train_layout);
-
-  QHBoxLayout* val_layout = new QHBoxLayout();
-  val_ratio_slider_ = new QSlider(Qt::Horizontal);
-  val_ratio_slider_->setRange(0, 100);
-  val_ratio_slider_->setValue(20);
-  val_ratio_label_ = new QLabel("20%");
-  val_layout->addWidget(val_ratio_slider_, 1);
-  val_layout->addWidget(val_ratio_label_);
-  ratios_layout->addRow("Validation:", val_layout);
-
-  QHBoxLayout* test_layout = new QHBoxLayout();
-  test_ratio_slider_ = new QSlider(Qt::Horizontal);
-  test_ratio_slider_->setRange(0, 100);
-  test_ratio_slider_->setValue(10);
-  test_ratio_label_ = new QLabel("10%");
-  test_layout->addWidget(test_ratio_slider_, 1);
-  test_layout->addWidget(test_ratio_label_);
-  ratios_layout->addRow("Test:", test_layout);
-
-  splits_layout->addLayout(ratios_layout);
-
-  split_statistics_label_ = new QLabel("Target: 70/20/10% | Actual: calculating...");
-  split_statistics_label_->setStyleSheet(
-      "QLabel { padding: 10px; background-color: #f0f0f0; border-radius: 5px; }");
-  splits_layout->addWidget(split_statistics_label_);
-
-  QHBoxLayout* salt_layout = new QHBoxLayout();
-  salt_layout->addWidget(new QLabel("Random Seed (Salt):"));
-  salt_edit_ = new QLineEdit();
-  salt_edit_->setReadOnly(true);
-  salt_layout->addWidget(salt_edit_, 1);
-  splits_layout->addLayout(salt_layout);
-
-  QHBoxLayout* reset_layout = new QHBoxLayout();
-  reset_layout->addStretch();
-  reset_splits_button_ = new QPushButton("Reset All Splits");
-  reset_splits_button_->setStyleSheet("QPushButton { color: red; }");
-  reset_layout->addWidget(reset_splits_button_);
-  splits_layout->addLayout(reset_layout);
-
-  main_layout->addWidget(splits_group);
-
-  // ===== Model Versions =====
-  QGroupBox* models_group = new QGroupBox("Model Versions");
-  QVBoxLayout* models_layout = new QVBoxLayout(models_group);
-
-  QLabel* models_info = new QLabel(
-      "Track trained model versions with metadata. Register models after training to compare "
-      "performance and maintain version history.");
-  models_info->setWordWrap(true);
-  models_info->setStyleSheet("color: gray; font-size: 10px;");
-  models_layout->addWidget(models_info);
-
-  model_versions_table_ = new QTableWidget();
-  model_versions_table_->setColumnCount(5);
-  model_versions_table_->setHorizontalHeaderLabels(
-      {"Name", "Date", "Images Count", "Path", "Notes"});
-  model_versions_table_->horizontalHeader()->setStretchLastSection(true);
-  model_versions_table_->setSelectionBehavior(QAbstractItemView::SelectRows);
-  model_versions_table_->setSelectionMode(QAbstractItemView::SingleSelection);
-  model_versions_table_->setMaximumHeight(250);
-  models_layout->addWidget(model_versions_table_);
-
-  QHBoxLayout* model_btn_layout = new QHBoxLayout();
-  add_model_button_ = new QPushButton("Add Model");
-  edit_notes_button_ = new QPushButton("Edit Notes");
-  compare_models_button_ = new QPushButton("Compare Models...");
-  remove_model_button_ = new QPushButton("Remove Entry");
-
-  model_btn_layout->addWidget(add_model_button_);
-  model_btn_layout->addWidget(edit_notes_button_);
-  model_btn_layout->addWidget(compare_models_button_);
-  model_btn_layout->addStretch();
-  model_btn_layout->addWidget(remove_model_button_);
-
-  models_layout->addLayout(model_btn_layout);
-  main_layout->addWidget(models_group);
-
-  main_layout->addStretch();
+  // Configure table headers to stretch
+  ui_->plugin_settings_table_->horizontalHeader()->setStretchLastSection(true);
+  ui_->model_versions_table_->horizontalHeader()->setStretchLastSection(true);
 }
 
 void AIModelSettingsTab::ConnectSignals()
 {
   // Plugin signals
-  connect(browse_script_button_, &QPushButton::clicked, this,
+  connect(ui_->plugin_wizard_button_, &QPushButton::clicked, this,
+          &AIModelSettingsTab::requestPluginWizard);
+  connect(ui_->browse_script_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnBrowsePluginScript);
-  connect(add_plugin_setting_button_, &QPushButton::clicked, this,
+  connect(ui_->add_plugin_setting_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnAddPluginSetting);
+  connect(ui_->remove_plugin_setting_button_, &QPushButton::clicked, this,
+          &AIModelSettingsTab::OnRemovePluginSetting);
 
   // Split signals
-  connect(splits_enabled_checkbox_, &QCheckBox::stateChanged, this,
+  connect(ui_->splits_enabled_checkbox_, &QCheckBox::checkStateChanged, this,
           &AIModelSettingsTab::OnSplitsEnabledChanged);
-  connect(train_ratio_slider_, &QSlider::valueChanged, this,
+  connect(ui_->train_ratio_slider_, &QSlider::valueChanged, this,
           &AIModelSettingsTab::OnSplitRatioChanged);
-  connect(val_ratio_slider_, &QSlider::valueChanged, this, &AIModelSettingsTab::OnSplitRatioChanged);
-  connect(test_ratio_slider_, &QSlider::valueChanged, this,
+  connect(ui_->val_ratio_slider_, &QSlider::valueChanged, this, &AIModelSettingsTab::OnSplitRatioChanged);
+  connect(ui_->test_ratio_slider_, &QSlider::valueChanged, this,
           &AIModelSettingsTab::OnSplitRatioChanged);
-  connect(reset_splits_button_, &QPushButton::clicked, this, &AIModelSettingsTab::OnResetSplits);
+  connect(ui_->reset_splits_button_, &QPushButton::clicked, this, &AIModelSettingsTab::OnResetSplits);
 
   // Model signals
-  connect(add_model_button_, &QPushButton::clicked, this,
+  connect(ui_->add_model_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnAddModelVersion);
-  connect(edit_notes_button_, &QPushButton::clicked, this, &AIModelSettingsTab::OnEditModelNotes);
-  connect(compare_models_button_, &QPushButton::clicked, this,
+  connect(ui_->edit_notes_button_, &QPushButton::clicked, this, &AIModelSettingsTab::OnEditModelNotes);
+  connect(ui_->compare_models_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnCompareModels);
-  connect(remove_model_button_, &QPushButton::clicked, this,
+  connect(ui_->remove_model_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnRemoveModelVersion);
 }
 
@@ -227,47 +71,24 @@ void AIModelSettingsTab::LoadFromConfig(const ProjectConfig& config)
 {
   // Plugin Configuration
   const PluginConfig& plugin = config.GetPluginConfig();
-  plugin_enabled_checkbox_->setChecked(plugin.enabled);
-  plugin_name_edit_->setText(plugin.name);
-  plugin_env_setup_edit_->setText(plugin.env_setup);
-  plugin_command_edit_->setText(plugin.command);
-  plugin_script_edit_->setText(plugin.script_path);
-  plugin_detect_args_edit_->setText(plugin.detect_args);
-  plugin_train_args_edit_->setText(plugin.train_args);
+  ui_->plugin_enabled_checkbox_->setChecked(plugin.enabled);
+  ui_->plugin_name_edit_->setText(plugin.name);
+  ui_->plugin_env_setup_edit_->setText(plugin.env_setup);
+  ui_->plugin_command_edit_->setText(plugin.command);
+  ui_->plugin_script_edit_->setText(plugin.script_path);
+  ui_->plugin_detect_args_edit_->setText(plugin.detect_args);
+  ui_->plugin_train_args_edit_->setText(plugin.train_args);
 
-  // Clear existing plugin settings
-  plugin_setting_edits_.clear();
-  // Remove all rows except the "Add Setting" button row
-  while (plugin_settings_layout_->rowCount() > 1)
-  {
-    plugin_settings_layout_->removeRow(0);
-  }
-
-  // Add plugin settings from config
-  for (auto it = plugin.settings.begin(); it != plugin.settings.end(); ++it)
-  {
-    QLineEdit* edit = new QLineEdit(it.value());
-    QPushButton* remove_btn = new QPushButton("X");
-    remove_btn->setFixedWidth(24);
-    remove_btn->setProperty("setting_key", it.key());
-    connect(remove_btn, &QPushButton::clicked, this, &AIModelSettingsTab::OnRemovePluginSetting);
-
-    QHBoxLayout* row_layout = new QHBoxLayout();
-    row_layout->addWidget(edit);
-    row_layout->addWidget(remove_btn);
-
-    plugin_settings_layout_->insertRow(plugin_settings_layout_->rowCount() - 1, it.key() + ":",
-                                       row_layout);
-    plugin_setting_edits_[it.key()] = edit;
-  }
+  // Populate plugin settings table
+  PopulatePluginSettingsTable();
 
   // Dataset Splits
   const SplitConfig& split_cfg = config.GetSplitConfig();
-  splits_enabled_checkbox_->setChecked(split_cfg.enabled);
-  train_ratio_slider_->setValue(static_cast<int>(split_cfg.target_train_ratio * 100));
-  val_ratio_slider_->setValue(static_cast<int>(split_cfg.target_val_ratio * 100));
-  test_ratio_slider_->setValue(static_cast<int>(split_cfg.target_test_ratio * 100));
-  salt_edit_->setText(split_cfg.hash_salt);
+  ui_->splits_enabled_checkbox_->setChecked(split_cfg.enabled);
+  ui_->train_ratio_slider_->setValue(static_cast<int>(split_cfg.target_train_ratio * 100));
+  ui_->val_ratio_slider_->setValue(static_cast<int>(split_cfg.target_val_ratio * 100));
+  ui_->test_ratio_slider_->setValue(static_cast<int>(split_cfg.target_test_ratio * 100));
+  ui_->salt_edit_->setText(split_cfg.hash_salt);
   OnSplitRatioChanged();  // Update labels
   UpdateSplitStatistics();
 
@@ -275,35 +96,69 @@ void AIModelSettingsTab::LoadFromConfig(const ProjectConfig& config)
   RefreshModelList();
 }
 
+void AIModelSettingsTab::PopulatePluginSettingsTable()
+{
+  const PluginConfig& plugin = config_.GetPluginConfig();
+  ui_->plugin_settings_table_->setRowCount(0);
+
+  for (auto it = plugin.settings.begin(); it != plugin.settings.end(); ++it)
+  {
+    int row = ui_->plugin_settings_table_->rowCount();
+    ui_->plugin_settings_table_->insertRow(row);
+    ui_->plugin_settings_table_->setItem(row, 0, new QTableWidgetItem(it.key()));
+    ui_->plugin_settings_table_->setItem(row, 1, new QTableWidgetItem(it.value()));
+  }
+}
+
+QMap<QString, QString> AIModelSettingsTab::GetPluginSettingsFromTable() const
+{
+  QMap<QString, QString> settings;
+
+  for (int row = 0; row < ui_->plugin_settings_table_->rowCount(); ++row)
+  {
+    QTableWidgetItem* key_item = ui_->plugin_settings_table_->item(row, 0);
+    QTableWidgetItem* value_item = ui_->plugin_settings_table_->item(row, 1);
+
+    if (key_item && value_item)
+    {
+      QString key = key_item->text().trimmed();
+      QString value = value_item->text().trimmed();
+
+      if (!key.isEmpty())
+      {
+        settings[key] = value;
+      }
+    }
+  }
+
+  return settings;
+}
+
 void AIModelSettingsTab::SaveToConfig(ProjectConfig& config)
 {
   // Plugin Configuration
   PluginConfig plugin = config.GetPluginConfig();
-  plugin.enabled = plugin_enabled_checkbox_->isChecked();
-  plugin.name = plugin_name_edit_->text();
-  plugin.env_setup = plugin_env_setup_edit_->text();
-  plugin.command = plugin_command_edit_->text();
-  plugin.script_path = plugin_script_edit_->text();
-  plugin.detect_args = plugin_detect_args_edit_->text();
-  plugin.train_args = plugin_train_args_edit_->text();
+  plugin.enabled = ui_->plugin_enabled_checkbox_->isChecked();
+  plugin.name = ui_->plugin_name_edit_->text();
+  plugin.env_setup = ui_->plugin_env_setup_edit_->text();
+  plugin.command = ui_->plugin_command_edit_->text();
+  plugin.script_path = ui_->plugin_script_edit_->text();
+  plugin.detect_args = ui_->plugin_detect_args_edit_->text();
+  plugin.train_args = ui_->plugin_train_args_edit_->text();
 
-  // Save plugin settings
-  plugin.settings.clear();
-  for (auto it = plugin_setting_edits_.begin(); it != plugin_setting_edits_.end(); ++it)
-  {
-    plugin.settings[it.key()] = it.value()->text();
-  }
+  // Save plugin settings from table
+  plugin.settings = GetPluginSettingsFromTable();
 
   // Save plugin config
   config.SetPluginConfig(plugin);
 
   // Dataset Splits
   SplitConfig split_cfg;
-  split_cfg.enabled = splits_enabled_checkbox_->isChecked();
-  split_cfg.target_train_ratio = train_ratio_slider_->value() / 100.0;
-  split_cfg.target_val_ratio = val_ratio_slider_->value() / 100.0;
-  split_cfg.target_test_ratio = test_ratio_slider_->value() / 100.0;
-  split_cfg.hash_salt = salt_edit_->text();
+  split_cfg.enabled = ui_->splits_enabled_checkbox_->isChecked();
+  split_cfg.target_train_ratio = ui_->train_ratio_slider_->value() / 100.0;
+  split_cfg.target_val_ratio = ui_->val_ratio_slider_->value() / 100.0;
+  split_cfg.target_test_ratio = ui_->test_ratio_slider_->value() / 100.0;
+  split_cfg.hash_salt = ui_->salt_edit_->text();
   config.SetSplitConfig(split_cfg);
 }
 
@@ -311,17 +166,17 @@ void AIModelSettingsTab::RefreshModelList()
 {
   // Reload model list from current config
   const QList<ModelVersion>& models = config_.GetModelVersions();
-  model_versions_table_->setRowCount(models.size());
+  ui_->model_versions_table_->setRowCount(models.size());
   for (int i = 0; i < models.size(); ++i)
   {
     const ModelVersion& model = models[i];
-    model_versions_table_->setItem(i, 0, new QTableWidgetItem(model.name));
-    model_versions_table_->setItem(i, 1,
+    ui_->model_versions_table_->setItem(i, 0, new QTableWidgetItem(model.name));
+    ui_->model_versions_table_->setItem(i, 1,
                                     new QTableWidgetItem(model.timestamp.toString("yyyy-MM-dd")));
-    model_versions_table_->setItem(i, 2,
+    ui_->model_versions_table_->setItem(i, 2,
                                     new QTableWidgetItem(QString::number(model.training_images_count)));
-    model_versions_table_->setItem(i, 3, new QTableWidgetItem(model.path));
-    model_versions_table_->setItem(i, 4, new QTableWidgetItem(model.notes));
+    ui_->model_versions_table_->setItem(i, 3, new QTableWidgetItem(model.path));
+    ui_->model_versions_table_->setItem(i, 4, new QTableWidgetItem(model.notes));
   }
 }
 
@@ -336,7 +191,7 @@ void AIModelSettingsTab::OnBrowsePluginScript()
     {
       file = file.mid(project_dir_.length() + 1);
     }
-    plugin_script_edit_->setText(file);
+    ui_->plugin_script_edit_->setText(file);
   }
 }
 
@@ -347,59 +202,33 @@ void AIModelSettingsTab::OnAddPluginSetting()
       QInputDialog::getText(this, "Add Setting", "Setting name:", QLineEdit::Normal, "", &ok);
   if (ok && !key.isEmpty())
   {
-    if (plugin_setting_edits_.contains(key))
+    // Check for duplicate key
+    for (int row = 0; row < ui_->plugin_settings_table_->rowCount(); ++row)
     {
-      QMessageBox::warning(this, "Duplicate Setting",
-                           QString("Setting '%1' already exists!").arg(key));
-      return;
+      QTableWidgetItem* key_item = ui_->plugin_settings_table_->item(row, 0);
+      if (key_item && key_item->text() == key)
+      {
+        QMessageBox::warning(this, "Duplicate Setting",
+                             QString("Setting '%1' already exists!").arg(key));
+        return;
+      }
     }
 
-    QLineEdit* edit = new QLineEdit();
-    QPushButton* remove_btn = new QPushButton("X");
-    remove_btn->setFixedWidth(24);
-    remove_btn->setProperty("setting_key", key);
-    connect(remove_btn, &QPushButton::clicked, this, &AIModelSettingsTab::OnRemovePluginSetting);
-
-    QHBoxLayout* row_layout = new QHBoxLayout();
-    row_layout->addWidget(edit);
-    row_layout->addWidget(remove_btn);
-
-    // Insert before the "Add Setting" button row
-    plugin_settings_layout_->insertRow(plugin_settings_layout_->rowCount() - 1, key + ":", row_layout);
-    plugin_setting_edits_[key] = edit;
+    int row = ui_->plugin_settings_table_->rowCount();
+    ui_->plugin_settings_table_->insertRow(row);
+    ui_->plugin_settings_table_->setItem(row, 0, new QTableWidgetItem(key));
+    ui_->plugin_settings_table_->setItem(row, 1, new QTableWidgetItem(""));
+    ui_->plugin_settings_table_->editItem(ui_->plugin_settings_table_->item(row, 1));
   }
 }
 
 void AIModelSettingsTab::OnRemovePluginSetting()
 {
-  QPushButton* btn = qobject_cast<QPushButton*>(sender());
-  if (!btn)
+  int row = ui_->plugin_settings_table_->currentRow();
+  if (row >= 0)
   {
-    return;
+    ui_->plugin_settings_table_->removeRow(row);
   }
-
-  QString key = btn->property("setting_key").toString();
-  if (key.isEmpty() || !plugin_setting_edits_.contains(key))
-  {
-    return;
-  }
-
-  // Find and remove the row from the layout
-  for (int i = 0; i < plugin_settings_layout_->rowCount(); ++i)
-  {
-    QLayoutItem* label_item = plugin_settings_layout_->itemAt(i, QFormLayout::LabelRole);
-    if (label_item && label_item->widget())
-    {
-      QLabel* label = qobject_cast<QLabel*>(label_item->widget());
-      if (label && label->text() == key + ":")
-      {
-        plugin_settings_layout_->removeRow(i);
-        break;
-      }
-    }
-  }
-
-  plugin_setting_edits_.remove(key);
 }
 
 void AIModelSettingsTab::OnAddModelVersion()
@@ -412,7 +241,7 @@ void AIModelSettingsTab::OnAddModelVersion()
 
 void AIModelSettingsTab::OnEditModelNotes()
 {
-  int row = model_versions_table_->currentRow();
+  int row = ui_->model_versions_table_->currentRow();
   if (row < 0)
   {
     QMessageBox::warning(this, "No Selection", "Please select a model version to edit.");
@@ -456,7 +285,7 @@ void AIModelSettingsTab::OnEditModelNotes()
     config_.UpdateModelVersion(row, model);
 
     // Update table
-    model_versions_table_->setItem(row, 4, new QTableWidgetItem(model.notes));
+    ui_->model_versions_table_->setItem(row, 4, new QTableWidgetItem(model.notes));
 
     QMessageBox::information(this, "Notes Updated", "Model notes have been updated.");
   }
@@ -464,7 +293,7 @@ void AIModelSettingsTab::OnEditModelNotes()
 
 void AIModelSettingsTab::OnRemoveModelVersion()
 {
-  int row = model_versions_table_->currentRow();
+  int row = ui_->model_versions_table_->currentRow();
   if (row < 0)
   {
     QMessageBox::warning(this, "No Selection", "Please select a model version to remove.");
@@ -504,10 +333,10 @@ void AIModelSettingsTab::OnCompareModels()
 void AIModelSettingsTab::OnSplitsEnabledChanged(int state)
 {
   bool enabled = (state == Qt::Checked);
-  train_ratio_slider_->setEnabled(enabled);
-  val_ratio_slider_->setEnabled(enabled);
-  test_ratio_slider_->setEnabled(enabled);
-  reset_splits_button_->setEnabled(enabled);
+  ui_->train_ratio_slider_->setEnabled(enabled);
+  ui_->val_ratio_slider_->setEnabled(enabled);
+  ui_->test_ratio_slider_->setEnabled(enabled);
+  ui_->reset_splits_button_->setEnabled(enabled);
 
   SplitConfig split_cfg = config_.GetSplitConfig();
   split_cfg.enabled = enabled;
@@ -519,15 +348,15 @@ void AIModelSettingsTab::OnSplitsEnabledChanged(int state)
 void AIModelSettingsTab::OnSplitRatioChanged()
 {
   // Update labels
-  train_ratio_label_->setText(QString("%1%").arg(train_ratio_slider_->value()));
-  val_ratio_label_->setText(QString("%1%").arg(val_ratio_slider_->value()));
-  test_ratio_label_->setText(QString("%1%").arg(test_ratio_slider_->value()));
+  ui_->train_ratio_label_->setText(QString("%1%").arg(ui_->train_ratio_slider_->value()));
+  ui_->val_ratio_label_->setText(QString("%1%").arg(ui_->val_ratio_slider_->value()));
+  ui_->test_ratio_label_->setText(QString("%1%").arg(ui_->test_ratio_slider_->value()));
 
   // Update config
   SplitConfig split_cfg = config_.GetSplitConfig();
-  split_cfg.target_train_ratio = train_ratio_slider_->value() / 100.0;
-  split_cfg.target_val_ratio = val_ratio_slider_->value() / 100.0;
-  split_cfg.target_test_ratio = test_ratio_slider_->value() / 100.0;
+  split_cfg.target_train_ratio = ui_->train_ratio_slider_->value() / 100.0;
+  split_cfg.target_val_ratio = ui_->val_ratio_slider_->value() / 100.0;
+  split_cfg.target_test_ratio = ui_->test_ratio_slider_->value() / 100.0;
   config_.SetSplitConfig(split_cfg);
 
   UpdateSplitStatistics();
@@ -558,7 +387,7 @@ void AIModelSettingsTab::UpdateSplitStatistics()
   const SplitConfig& split_cfg = config_.GetSplitConfig();
   if (!split_cfg.enabled)
   {
-    split_statistics_label_->setText("Splits disabled");
+    ui_->split_statistics_label_->setText("Splits disabled");
     return;
   }
 
@@ -578,9 +407,9 @@ void AIModelSettingsTab::UpdateSplitStatistics()
     }
   }
 
-  int target_train = static_cast<int>(train_ratio_slider_->value());
-  int target_val = static_cast<int>(val_ratio_slider_->value());
-  int target_test = static_cast<int>(test_ratio_slider_->value());
+  int target_train = static_cast<int>(ui_->train_ratio_slider_->value());
+  int target_val = static_cast<int>(ui_->val_ratio_slider_->value());
+  int target_test = static_cast<int>(ui_->test_ratio_slider_->value());
 
   int actual_train_pct = total_images > 0 ? (counts["train"] * 100 / total_images) : 0;
   int actual_val_pct = total_images > 0 ? (counts["val"] * 100 / total_images) : 0;
@@ -597,5 +426,5 @@ void AIModelSettingsTab::UpdateSplitStatistics()
                       .arg(counts["val"])
                       .arg(counts["test"]);
 
-  split_statistics_label_->setText(stats);
+  ui_->split_statistics_label_->setText(stats);
 }

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ModelComparisonDialog</class>
+ <widget class="QDialog" name="ModelComparisonDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1200</width>
+    <height>700</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Compare Model Versions</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout_">
+   <item>
+    <layout class="QHBoxLayout" name="controls_layout_">
+     <item>
+      <widget class="QLabel" name="model_a_label_">
+       <property name="text">
+        <string>Model A:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="model_a_combo_"/>
+     </item>
+     <item>
+      <spacer name="spacer_1_">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="model_b_label_">
+       <property name="text">
+        <string>Model B:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="model_b_combo_"/>
+     </item>
+     <item>
+      <spacer name="spacer_2_">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Policy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="image_label_">
+       <property name="text">
+        <string>Test Image:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="image_combo_">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="prev_button_">
+       <property name="text">
+        <string>Previous</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="next_button_">
+       <property name="text">
+        <string>Next</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="controls_spacer_">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="compare_button_">
+       <property name="styleSheet">
+        <string>QPushButton { font-weight: bold; }</string>
+       </property>
+       <property name="text">
+        <string>Run Comparison</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="comparison_layout_">
+     <item>
+      <widget class="QGroupBox" name="pane_a_">
+       <property name="title">
+        <string>Model A Results</string>
+       </property>
+       <layout class="QVBoxLayout" name="pane_a_layout_">
+        <item>
+         <widget class="PolygonCanvas" name="canvas_a_">
+          <property name="minimumSize">
+           <size>
+            <width>500</width>
+            <height>400</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="stats_a_">
+          <property name="styleSheet">
+           <string>QLabel { padding: 5px; background-color: #f0f0f0; border-radius: 3px; }</string>
+          </property>
+          <property name="text">
+           <string>Not yet run</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="pane_b_">
+       <property name="title">
+        <string>Model B Results</string>
+       </property>
+       <layout class="QVBoxLayout" name="pane_b_layout_">
+        <item>
+         <widget class="PolygonCanvas" name="canvas_b_">
+          <property name="minimumSize">
+           <size>
+            <width>500</width>
+            <height>400</height>
+           </size>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="stats_b_">
+          <property name="styleSheet">
+           <string>QLabel { padding: 5px; background-color: #f0f0f0; border-radius: 3px; }</string>
+          </property>
+          <property name="text">
+           <string>Not yet run</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PolygonCanvas</class>
+   <extends>QLabel</extends>
+   <header>polygoncanvas.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

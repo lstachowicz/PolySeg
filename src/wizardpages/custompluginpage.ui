@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CustomPluginPage</class>
+ <widget class="QWizardPage" name="CustomPluginPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>550</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="command_group_">
+     <property name="title">
+      <string>Plugin Command (required)</string>
+     </property>
+     <layout class="QVBoxLayout" name="command_layout">
+      <item>
+       <widget class="QLineEdit" name="command_edit_">
+        <property name="placeholderText">
+         <string>e.g., yolo, python3 my_plugin.py, ./detector</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="command_examples_">
+        <property name="styleSheet">
+         <string notr="true">color: #666; font-size: 11px;</string>
+        </property>
+        <property name="text">
+         <string>Examples:
+  yolo                    (installed command)
+  python3 my_plugin.py    (Python script)
+  ./detector              (local binary)
+  /usr/local/bin/mydet    (absolute path)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="requirements_group_">
+     <property name="title">
+      <string>Requirements File (optional)</string>
+     </property>
+     <layout class="QVBoxLayout" name="requirements_layout">
+      <item>
+       <layout class="QHBoxLayout" name="requirements_input_layout">
+        <item>
+         <widget class="QLineEdit" name="requirements_edit_">
+          <property name="placeholderText">
+           <string>/path/to/requirements.txt</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="browse_requirements_button_">
+          <property name="text">
+           <string>Browse...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="clear_requirements_button_">
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="requirements_info_">
+        <property name="styleSheet">
+         <string notr="true">color: #666; font-size: 11px;</string>
+        </property>
+        <property name="text">
+         <string>For Python plugins. Can include:
+  pip packages: torch, numpy
+  git repos: git+https://github.com/ultralytics/ultralytics
+
+Will be installed via: pip install -r requirements.txt</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="env_group_">
+     <property name="title">
+      <string>Environment Setup (optional)</string>
+     </property>
+     <layout class="QVBoxLayout" name="env_layout">
+      <item>
+       <widget class="QLineEdit" name="env_setup_edit_">
+        <property name="placeholderText">
+         <string>e.g., source /path/to/venv/bin/activate</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="env_info_">
+        <property name="styleSheet">
+         <string notr="true">color: #666; font-size: 11px;</string>
+        </property>
+        <property name="text">
+         <string>Command to run before plugin execution</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="name_group_">
+     <property name="title">
+      <string>Plugin Name</string>
+     </property>
+     <layout class="QVBoxLayout" name="name_layout">
+      <item>
+       <widget class="QLineEdit" name="plugin_name_edit_">
+        <property name="placeholderText">
+         <string>My Custom Detector</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="name_info_">
+        <property name="styleSheet">
+         <string notr="true">color: #666; font-size: 11px;</string>
+        </property>
+        <property name="text">
+         <string>Display name for this plugin in the UI</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="use_venv_checkbox_">
+     <property name="text">
+      <string>Use project virtual environment
+(Creates .venv in project directory, recommended if using requirements.txt)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

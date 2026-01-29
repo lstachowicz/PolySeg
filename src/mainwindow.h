@@ -55,6 +55,7 @@ class MainWindow : public QMainWindow
   void RunAutoDetect();
   void RunBatchDetect();
   void RunTrainModel();
+  void ShowPluginWizard();
 
   // Meta file review
   void ApproveCurrentAnnotations();

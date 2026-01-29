@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PretrainedModelPage_SMP</class>
+ <widget class="QWizardPage" name="PretrainedModelPage_SMP">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="title">
+   <string>Pre-trained Model Selection</string>
+  </property>
+  <property name="subTitle">
+   <string>Choose how to initialize your SMP model weights.</string>
+  </property>
+  <layout class="QVBoxLayout" name="mainLayout">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="modeGroupBox">
+     <property name="title">
+      <string>Would you like to use pre-trained encoder weights?</string>
+     </property>
+     <layout class="QVBoxLayout" name="modeLayout">
+      <item>
+       <widget class="QRadioButton" name="pretrainedRadio">
+        <property name="text">
+         <string>Use ImageNet pretrained encoder (Recommended)</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="pretrainedDescription">
+        <property name="styleSheet">
+         <string notr="true">color: #666; margin-left: 20px;</string>
+        </property>
+        <property name="text">
+         <string>Start with an encoder pretrained on ImageNet - faster training and better results</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="scratchRadio">
+        <property name="text">
+         <string>Start from scratch</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="scratchDescription">
+        <property name="styleSheet">
+         <string notr="true">color: #666; margin-left: 20px;</string>
+        </property>
+        <property name="text">
+         <string>Train your own model from random weights - requires more data and time</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="existingRadio">
+        <property name="text">
+         <string>Use existing model file</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="existingDescription">
+        <property name="styleSheet">
+         <string notr="true">color: #666; margin-left: 20px;</string>
+        </property>
+        <property name="text">
+         <string>Select a .pt/.pth file from disk</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="smpInfoLabel">
+     <property name="styleSheet">
+      <string notr="true">QLabel { background-color: #e8f4e8; padding: 15px; border-radius: 5px; }</string>
+     </property>
+     <property name="text">
+      <string>SMP models use ImageNet pre-trained encoder weights.
+These are automatically downloaded by PyTorch when the model is first loaded.
+
+No additional model download is required.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="existingModelWidget" native="true">
+     <layout class="QHBoxLayout" name="existingModelLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="existingModelEdit">
+        <property name="placeholderText">
+         <string>Select model file...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="browseExistingButton">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

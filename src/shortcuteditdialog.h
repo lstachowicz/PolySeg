@@ -2,7 +2,11 @@
 #define SHORTCUTEDITDIALOG_H
 
 #include <QDialog>
-#include <QKeySequenceEdit>
+
+namespace Ui
+{
+class ShortcutEditDialog;
+}
 
 /**
  * @brief Dialog for editing a single keyboard shortcut
@@ -17,11 +21,12 @@ class ShortcutEditDialog : public QDialog
  public:
   explicit ShortcutEditDialog(const QString& action, const QString& current_shortcut,
                               QWidget* parent = nullptr);
+  ~ShortcutEditDialog();
 
   QString GetKeySequence() const;
 
  private:
-  QKeySequenceEdit* key_edit_;
+  Ui::ShortcutEditDialog* ui_;
 };
 
 #endif  // SHORTCUTEDITDIALOG_H

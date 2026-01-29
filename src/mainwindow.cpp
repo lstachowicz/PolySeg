@@ -39,6 +39,7 @@
 #include <iostream>
 
 #include "aipluginmanager.h"
+#include "pluginwizard.h"
 #include "polygoncanvas.h"
 #include "settingsdialog.h"
 #include "ui_mainwindow.h"
@@ -125,6 +126,7 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->actionFirstImage, &QAction::triggered, this, &MainWindow::FirstImage);
   connect(ui->actionLastImage, &QAction::triggered, this, &MainWindow::LastImage);
 
+  connect(ui->actionPluginWizard, &QAction::triggered, this, &MainWindow::ShowPluginWizard);
   connect(ui->actionAutoDetect, &QAction::triggered, this, &MainWindow::RunAutoDetect);
   connect(ui->actionBatchDetect, &QAction::triggered, this, &MainWindow::RunBatchDetect);
   connect(ui->actionTrainModel, &QAction::triggered, this, &MainWindow::RunTrainModel);
@@ -955,6 +957,44 @@ void MainWindow::RunBatchDetect()
   ai_plugin_manager_->RunBatchDetect();
 }
 
+void MainWindow::ShowPluginWizard()
+{
+  if (project_directory_.isEmpty())
+  {
+    QMessageBox::warning(this, "No Project",
+                         "Please create or open a project first.\n\n"
+                         "Use File -> New Project or File -> Open Project.");
+    return;
+  }
+
+  // Determine wizard context
+  WizardContext context = WizardContext::ExistingProject;
+  if (project_config_.GetPluginConfig().enabled)
+  {
+    context = WizardContext::Reconfiguration;
+  }
+
+  PluginWizard wizard(this, project_directory_, context);
+
+  if (wizard.exec() == QDialog::Accepted)
+  {
+    // Get configured plugin from wizard
+    PluginConfig new_config = wizard.BuildPluginConfig();
+
+    // Update project configuration
+    project_config_.SetPluginConfig(new_config);
+    SaveProjectConfig();
+
+    // Update AI plugin manager
+    ai_plugin_manager_->SetProjectConfig(&project_config_);
+
+    QMessageBox::information(this, "Plugin Configured",
+                             QString("Plugin '%1' has been configured successfully.\n\n"
+                                     "You can now use Tools -> Auto Detect to run AI detection.")
+                                 .arg(new_config.name));
+  }
+}
+
 void MainWindow::PromptModelRegistration()
 {
   ai_plugin_manager_->PromptModelRegistration();
@@ -1053,6 +1093,12 @@ void MainWindow::ShowProjectSettings()
     RegisterModelManually();
     // After registration, refresh the model list in the dialog
     dialog.RefreshModelList();
+  });
+
+  // Connect signal for plugin wizard
+  connect(&dialog, &SettingsDialog::RequestPluginWizard, this, [this, &dialog]() {
+    dialog.close();
+    ShowPluginWizard();
   });
 
   if (dialog.exec() == QDialog::Accepted)
@@ -1495,7 +1541,7 @@ void MainWindow::ShowAboutDialog()
 <p><b>AI-Powered Polygon Segmentation Tool</b></p>
 <p>Version 1.0</p>
 <br>
-<p>A professional Qt6-based desktop application for creating polygon annotations 
+<p>A secure offline desktop application for creating polygon annotations
 with universal AI plugin support.</p>
 <br>
 <p><b>Key Features:</b></p>
@@ -1511,7 +1557,7 @@ with universal AI plugin support.</p>
 <br>
 <p><b>License:</b> MIT</p>
 <p><b>Author:</b> Lukasz Stachowicz</p>
-<p><b>Framework:</b> Qt 6.5.3 (LGPL v3)</p>
+<p><b>Framework:</b> Qt (LGPL v3)</p>
 <br>
 <p>Visit: <a href='https://github.com/lstachowicz/PolySeg'>github.com/lstachowicz/PolySeg</a></p>
 )";
