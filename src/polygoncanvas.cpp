@@ -116,7 +116,7 @@ void PolygonCanvas::FinishCurrentPolygon()
   {
     SaveState();  // Save state before adding polygon
     polygons_.push_back(current_polygon_);
-    
+
     // Keep class_id and color for next polygon, only clear points
     int saved_class_id = current_polygon_.class_id;
     QColor saved_color = current_polygon_.color;
@@ -126,8 +126,11 @@ void PolygonCanvas::FinishCurrentPolygon()
     current_polygon_.is_selected = true;
 
     emit PolygonsChanged();
+    current_polygon_.class_id = -1;  // Exit drawing mode
+    emit CurrentClassChanged(-1);
     repaint();
-    std::cout << "Polygon finished and saved. Click to start next polygon or press Esc to stop." << std::endl;
+    std::cout << "Polygon finished and saved. Click to start next polygon or press Esc to stop."
+              << std::endl;
   }
   else
   {
@@ -147,21 +150,21 @@ void PolygonCanvas::ClearCurrentPolygon()
 void PolygonCanvas::mouseMoveEvent(QMouseEvent* ev)
 {
   auto pos = ev->pos() / scalar_;
-  
+
   // Clamp position to image bounds
   QPixmap pix = pixmap();
   if (!pix.isNull())
   {
     pos = ClampToImageBounds(pos, pix.size());
   }
-  
+
   active_point_pos_ = pos;
 }
 
 void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
-  
+
   // Clamp position to image bounds
   QPixmap pix = pixmap();
   if (!pix.isNull())
@@ -198,7 +201,7 @@ void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 void PolygonCanvas::mouseReleaseEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
-  
+
   // Clamp position to image bounds
   QPixmap pix = pixmap();
   if (!pix.isNull())
@@ -228,7 +231,7 @@ void PolygonCanvas::mouseReleaseEvent(QMouseEvent* ev)
   else
   {
     bool ctrl_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
-    
+
     // If we have a selected polygon and not pressing Ctrl, add point to end
     if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() && !ctrl_pressed)
     {
@@ -236,11 +239,12 @@ void PolygonCanvas::mouseReleaseEvent(QMouseEvent* ev)
       polygons_[selected_polygon_index_].points.push_back(pos);
       emit PolygonsChanged();
       repaint();
-      std::cout << "✓ Added point to selected polygon (total: " 
+      std::cout << "✓ Added point to selected polygon (total: "
                 << polygons_[selected_polygon_index_].points.size() << " points)" << std::endl;
     }
     // If Ctrl is pressed with selected polygon, insert point on edge
-    else if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() && ctrl_pressed)
+    else if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() &&
+             ctrl_pressed)
     {
       HandlePointInsertion(pos);
     }
@@ -329,7 +333,7 @@ void PolygonCanvas::paintEvent(QPaintEvent*)
 
     if (polygon.is_selected)
     {
-      lineWidth = 3;
+      lineWidth = 2;
       drawColor = drawColor.lighter(120);  // Brighter color
     }
     else
@@ -343,7 +347,9 @@ void PolygonCanvas::paintEvent(QPaintEvent*)
     // Draw points
     for (const auto& point : polygon.points)
     {
-      painter.drawEllipse(point * scalar_, POINT_DRAW_SIZE, POINT_DRAW_SIZE);
+      QPoint scaledPoint = point * scalar_;
+      painter.fillRect(scaledPoint.x() - POINT_DRAW_SIZE / 2, scaledPoint.y() - POINT_DRAW_SIZE / 2,
+                       POINT_DRAW_SIZE, POINT_DRAW_SIZE, drawColor);
     }
 
     // Draw segments
@@ -416,8 +422,7 @@ void PolygonCanvas::ExportAnnotations(const QString& filename, int class_id)
   std::cout << "Polygons: " << polygons_.size() << std::endl;
 }
 
-void PolygonCanvas::LoadAnnotations(const QString& filepath,
-                                        const QVector<QColor>& class_colors)
+void PolygonCanvas::LoadAnnotations(const QString& filepath, const QVector<QColor>& class_colors)
 {
   QFile file(filepath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -637,7 +642,7 @@ int PolygonCanvas::FindNearestSegmentIndex(const QPoint& position) const
 void PolygonCanvas::HandlePointDrag(const QPoint& position)
 {
   QPoint clamped_pos = position;
-  
+
   // Clamp position to image bounds
   QPixmap pix = pixmap();
   if (!pix.isNull())
@@ -689,7 +694,7 @@ void PolygonCanvas::HandlePointDrag(const QPoint& position)
 void PolygonCanvas::HandlePointInsertion(const QPoint& position)
 {
   QPoint clamped_pos = position;
-  
+
   // Clamp position to image bounds
   QPixmap pix = pixmap();
   if (!pix.isNull())
@@ -893,8 +898,8 @@ void PolygonCanvas::CopySelectedPolygon()
   if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
   {
     clipboard_polygon_ = polygons_[selected_polygon_index_];
-    std::cout << "Polygon copied to clipboard (" << clipboard_polygon_.points.size() 
-              << " points)" << std::endl;
+    std::cout << "Polygon copied to clipboard (" << clipboard_polygon_.points.size() << " points)"
+              << std::endl;
   }
 }
 
@@ -920,4 +925,3 @@ void PolygonCanvas::PastePolygon()
   emit PolygonsChanged();
   repaint();
 }
-

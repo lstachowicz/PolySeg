@@ -18,25 +18,12 @@ AIModelSettingsTab::AIModelSettingsTab(ProjectConfig& config, const QString& pro
                                        QWidget* parent)
     : BaseSettingsTab(parent), ui_(new Ui::AIModelSettingsTab), config_(config), project_dir_(project_dir)
 {
-}
-
-AIModelSettingsTab::~AIModelSettingsTab()
-{
-  delete ui_;
-}
-
-void AIModelSettingsTab::SetupUI()
-{
-  // Setup UI from .ui file
   ui_->setupUi(this);
 
   // Configure table headers to stretch
   ui_->plugin_settings_table_->horizontalHeader()->setStretchLastSection(true);
   ui_->model_versions_table_->horizontalHeader()->setStretchLastSection(true);
-}
 
-void AIModelSettingsTab::ConnectSignals()
-{
   // Plugin signals
   connect(ui_->plugin_wizard_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::requestPluginWizard);
@@ -65,6 +52,11 @@ void AIModelSettingsTab::ConnectSignals()
           &AIModelSettingsTab::OnCompareModels);
   connect(ui_->remove_model_button_, &QPushButton::clicked, this,
           &AIModelSettingsTab::OnRemoveModelVersion);
+}
+
+AIModelSettingsTab::~AIModelSettingsTab()
+{
+  delete ui_;
 }
 
 void AIModelSettingsTab::LoadFromConfig(const ProjectConfig& config)

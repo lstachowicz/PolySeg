@@ -16,23 +16,11 @@ ProjectSettingsTab::ProjectSettingsTab(ProjectConfig& config, const QString& pro
       config_(config),
       project_dir_(project_dir)
 {
-}
-
-ProjectSettingsTab::~ProjectSettingsTab()
-{
-  delete ui_;
-}
-
-void ProjectSettingsTab::SetupUI()
-{
   ui_->setupUi(this);
 
   // Configure table headers
   ui_->classes_table_->horizontalHeader()->setStretchLastSection(true);
-}
 
-void ProjectSettingsTab::ConnectSignals()
-{
   // Class buttons
   connect(ui_->add_class_button_, &QPushButton::clicked, this, &ProjectSettingsTab::OnAddClass);
   connect(ui_->edit_class_button_, &QPushButton::clicked, this, &ProjectSettingsTab::OnEditClass);
@@ -45,6 +33,11 @@ void ProjectSettingsTab::ConnectSignals()
           &ProjectSettingsTab::OnBrowseImagesFolder);
   connect(ui_->browse_labels_button_, &QPushButton::clicked, this,
           &ProjectSettingsTab::OnBrowseLabelsFolder);
+}
+
+ProjectSettingsTab::~ProjectSettingsTab()
+{
+  delete ui_;
 }
 
 void ProjectSettingsTab::LoadFromConfig(const ProjectConfig& config)

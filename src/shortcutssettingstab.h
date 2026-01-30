@@ -37,10 +37,6 @@ class ShortcutsSettingsTab : public BaseSettingsTab
  signals:
   void shortcutsChanged(const QMap<QString, QString>& shortcuts);
 
- protected:
-  void SetupUI() override;
-  void ConnectSignals() override;
-
  private slots:
   void OnCellClicked(int row, int column);
   void OnResetDefaults();

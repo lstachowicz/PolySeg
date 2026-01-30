@@ -31,10 +31,6 @@ class ImportExportSettingsTab : public BaseSettingsTab
   void LoadFromConfig(const ProjectConfig& config) override;
   void SaveToConfig(ProjectConfig& config) override;
 
- protected:
-  void SetupUI() override;
-  void ConnectSignals() override;
-
  private slots:
   void OnBrowseImportBasePath();
   void OnAddSkipFolder();

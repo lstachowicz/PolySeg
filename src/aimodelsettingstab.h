@@ -57,11 +57,6 @@ class AIModelSettingsTab : public BaseSettingsTab
    */
   void RefreshModelList();
 
- protected:
-  // BaseSettingsTab interface
-  void SetupUI() override;
-  void ConnectSignals() override;
-
  private slots:
   void OnBrowsePluginScript();
   void OnAddPluginSetting();
