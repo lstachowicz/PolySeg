@@ -12,6 +12,17 @@ ShortcutsSettingsTab::ShortcutsSettingsTab(QWidget* parent)
 {
   InitializeDefaultShortcuts();
   shortcuts_ = default_shortcuts_;
+
+  ui_->setupUi(this);
+
+  // Configure table headers
+  ui_->table_->horizontalHeader()->setStretchLastSection(true);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+  ui_->table_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+
+  connect(ui_->table_, &QTableWidget::cellClicked, this, &ShortcutsSettingsTab::OnCellClicked);
+  connect(ui_->reset_button_, &QPushButton::clicked, this, &ShortcutsSettingsTab::OnResetDefaults);
 }
 
 ShortcutsSettingsTab::~ShortcutsSettingsTab()
@@ -44,23 +55,6 @@ void ShortcutsSettingsTab::InitializeDefaultShortcuts()
   default_shortcuts_["Approve & Save"] = "Ctrl+Return";
   default_shortcuts_["Reject & Clear"] = "Ctrl+Backspace";
   default_shortcuts_["Keyboard Shortcuts"] = "F1";
-}
-
-void ShortcutsSettingsTab::SetupUI()
-{
-  ui_->setupUi(this);
-
-  // Configure table headers
-  ui_->table_->horizontalHeader()->setStretchLastSection(true);
-  ui_->table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-  ui_->table_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-  ui_->table_->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-}
-
-void ShortcutsSettingsTab::ConnectSignals()
-{
-  connect(ui_->table_, &QTableWidget::cellClicked, this, &ShortcutsSettingsTab::OnCellClicked);
-  connect(ui_->reset_button_, &QPushButton::clicked, this, &ShortcutsSettingsTab::OnResetDefaults);
 }
 
 void ShortcutsSettingsTab::LoadShortcuts()

@@ -9,20 +9,8 @@
 ImportExportSettingsTab::ImportExportSettingsTab(ProjectConfig& config, QWidget* parent)
     : BaseSettingsTab(parent), ui_(new Ui::ImportExportSettingsTab), config_(config)
 {
-}
-
-ImportExportSettingsTab::~ImportExportSettingsTab()
-{
-  delete ui_;
-}
-
-void ImportExportSettingsTab::SetupUI()
-{
   ui_->setupUi(this);
-}
 
-void ImportExportSettingsTab::ConnectSignals()
-{
   connect(ui_->browse_import_base_path_button_, &QPushButton::clicked, this,
           &ImportExportSettingsTab::OnBrowseImportBasePath);
 
@@ -31,6 +19,11 @@ void ImportExportSettingsTab::ConnectSignals()
 
   connect(ui_->remove_skip_folder_button_, &QPushButton::clicked, this,
           &ImportExportSettingsTab::OnRemoveSkipFolder);
+}
+
+ImportExportSettingsTab::~ImportExportSettingsTab()
+{
+  delete ui_;
 }
 
 void ImportExportSettingsTab::LoadFromConfig(const ProjectConfig& config)

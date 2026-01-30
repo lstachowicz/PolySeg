@@ -34,12 +34,6 @@ void SettingsDialog::SetupTabs()
   // Add tabs to list for polymorphic access
   tabs_ = {projectTab, aiModelTab, importExportTab, shortcuts_tab_};
 
-  // Initialize all tabs using Template Method pattern
-  for (auto* tab : tabs_)
-  {
-    tab->Initialize();
-  }
-
   // Load shortcuts separately (uses QSettings, not ProjectConfig)
   shortcuts_tab_->LoadShortcuts();
 

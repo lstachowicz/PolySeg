@@ -35,10 +35,6 @@ class ProjectSettingsTab : public BaseSettingsTab
  signals:
   void classesChanged();
 
- protected:
-  void SetupUI() override;
-  void ConnectSignals() override;
-
  private slots:
   void OnAddClass();
   void OnEditClass();
