@@ -30,3 +30,11 @@ PolySeg
 # OS
 .DS_Store
 Thumbs.db
+
+# Internal documentation and planning files
+docs/*-plan.md
+docs/*-specification.md
+docs/*-implementation*.md
+docs/internal-*
+docs/planning-*
+*.coverage-baseline
