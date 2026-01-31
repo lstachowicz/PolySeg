@@ -3,6 +3,8 @@
 **Smart Polygon Annotation with Universal AI Plugin Support**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/gh/lstachowicz/PolySeg/branch/master/graph/badge.svg)](https://codecov.io/gh/lstachowicz/PolySeg)
+[![Build Status](https://github.com/lstachowicz/PolySeg/workflows/Build/badge.svg)](https://github.com/lstachowicz/PolySeg/actions)
 
 A secure offline desktop application for creating polygon annotations for computer vision training datasets. Features a **universal AI plugin system** that integrates with any AI detection framework.
 
@@ -81,7 +83,7 @@ PolySeg is designed for ML engineers, data scientists, and researchers who need 
 ### Build Requirements
 
 - **Compiler**: C++17 compatible (GCC, Clang, MSVC)
-- **Build System**: qmake (requires Qt 6.8+)
+- **Build System**: CMake 3.20+ (requires Qt 6.8+)
 - **Optional**: clang-format and clang-tidy (for development)
 
 ### AI Plugin Requirements (Optional)
@@ -102,14 +104,40 @@ To use AI-assisted annotation, you need:
 # Clone the repository
 git clone https://github.com/lstachowicz/PolySeg.git
 cd PolySeg
+```
 
-# Build with qmake
-qmake PolySeg.pro
-make
+#### CMake Build
+
+**Note:** PolySeg requires Qt 6.8+ LTS. System packages are often older versions.
+
+```bash
+# Create and enter build directory
+mkdir build && cd build
+
+# Generate build files (Qt 6.8+ required)
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# If Qt6 is not found, specify your Qt installation path:
+# cmake .. -DCMAKE_PREFIX_PATH=~/Qt/6.8.3/gcc_64 -DCMAKE_BUILD_TYPE=Release
+
+# Build the application
+make -j$(nproc)
 
 # Run the application
 ./PolySeg
+
+# Run unit tests (optional)
+ctest
 ```
+
+**Qt6 Installation:**
+
+If you don't have Qt 6.8+, download from [qt.io](https://www.qt.io/download):
+
+1. Download Qt Online Installer
+2. Install Qt 6.8.3 LTS with Desktop gcc 64-bit
+3. Use the path in CMake: `~/Qt/6.8.3/gcc_64`
+
 
 ### Development Tools
 
@@ -122,6 +150,26 @@ Run static analysis with clang-tidy:
 ```bash
 clang-tidy src/*.cpp -- -I/path/to/qt/include
 ```
+
+### Testing
+
+The project includes unit tests using Google Test framework:
+
+```bash
+# Build and run tests (CMake only)
+cd build
+make PolySeg_tests
+./PolySeg_tests
+
+# Or run via CTest
+ctest --verbose
+```
+
+Tests are located in the `tests/` directory and cover:
+- Core functionality validation
+- Qt integration testing
+- Polygon calculation algorithms
+- Coordinate normalization
 
 ---
 

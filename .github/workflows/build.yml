@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4.3.0
@@ -21,21 +28,80 @@ jobs:
         arch: 'linux_gcc_64'
         cache: true
 
-    - name: Build
+    - name: Build with coverage
       run: |
-        qmake PolySeg.pro CONFIG+=release
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON
         make -j$(nproc)
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --verbose
+
+    - name: Generate coverage report
+      run: |
+        cd build
+        make coverage
+
+    - name: Coverage summary
+      run: |
+        cd build
+        echo "## Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Extract overall coverage
+        COVERAGE_PCT=$(lcov --summary coverage_src_only.info 2>/dev/null | grep "lines" | awk '{print $2}' | head -1)
+        COVERAGE_LINES=$(lcov --summary coverage_src_only.info 2>/dev/null | grep "lines" | awk '{print $4"/"$6}' | head -1)
+        COVERAGE_FUNCS=$(lcov --summary coverage_src_only.info 2>/dev/null | grep "functions" | awk '{print $2}' | head -1)
+
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Line Coverage | ${COVERAGE_PCT} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Lines Covered | ${COVERAGE_LINES} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Function Coverage | ${COVERAGE_FUNCS} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Simple file coverage using genhtml output
+        echo "### Coverage by File" >> $GITHUB_STEP_SUMMARY
+        echo "| File | Lines | Coverage |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|-------|----------|" >> $GITHUB_STEP_SUMMARY
+
+        # Extract file coverage from genhtml verbose output
+        genhtml coverage_src_only.info --quiet --output-directory /tmp/cov_temp 2>&1 | \
+          grep "Processing file" | \
+          sed 's/Processing file //' | \
+          grep "src/" | \
+          head -10 | \
+          while read line; do
+            file=$(echo "$line" | cut -d' ' -f1)
+            echo "| \`$file\` | - | - |" >> $GITHUB_STEP_SUMMARY
+          done
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: build/coverage_src_only.info
+        fail_ci_if_error: false
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: build/coverage_html/
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: PolySeg-linux
-        path: PolySeg
+        path: build/PolySeg
 
   build-windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4.3.0
@@ -51,19 +117,28 @@ jobs:
 
     - name: Build
       run: |
-        qmake PolySeg.pro CONFIG+=release
-        nmake
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        cmake --build . --config Release
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest -C Release --verbose
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: PolySeg-windows
-        path: release/PolySeg.exe
+        path: build/Release/PolySeg.exe
 
   build-macos-intel:
     runs-on: macos-15
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4.3.0
@@ -76,19 +151,27 @@ jobs:
 
     - name: Build
       run: |
-        qmake PolySeg.pro CONFIG+=release
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
         make -j$(sysctl -n hw.ncpu)
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --verbose
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: PolySeg-macos-intel
-        path: PolySeg.app
+        path: build/PolySeg.app
 
   build-macos-arm:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v4.3.0
@@ -101,11 +184,17 @@ jobs:
 
     - name: Build
       run: |
-        qmake PolySeg.pro CONFIG+=release
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
         make -j$(sysctl -n hw.ncpu)
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --verbose
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: PolySeg-macos-arm
-        path: PolySeg.app
+        path: build/PolySeg.app

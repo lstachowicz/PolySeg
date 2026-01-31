@@ -186,14 +186,14 @@ painter.drawLine(p1, p2);
 - Use `QFileInfo` for path manipulation
 
 ## Testing Guidelines
-- Build: `qmake6 PolySeg.pro && make -j4`
+- Build: `mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4`
 - Run: `./PolySeg`
 - Test multi-polygon: Draw → Enter → Draw → Enter → Save
 - Verify annotation format: Check .txt file has multiple lines
 
 ## Dependencies
 - C++17 compiler
-- qmake build system
+- CMake 3.20+ build system
 - Future: OpenCV (for AI features in Phase 7)
 
 ## Notes for AI Assistance
@@ -287,14 +287,14 @@ Example:
 Build from the `build` directory:
 ```bash
 cd build
-qmake ../PolySeg.pro
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
 
 For clean build:
 ```bash
-cd build
-make clean
-qmake ../PolySeg.pro
+rm -rf build
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
 ```
