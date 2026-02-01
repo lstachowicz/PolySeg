@@ -39,6 +39,8 @@
 #include <iostream>
 
 #include "aipluginmanager.h"
+#include "metadataimporter.h"
+#include "metadataimportsettingsdialog.h"
 #include "pluginwizard.h"
 #include "polygoncanvas.h"
 #include "settingsdialog.h"
@@ -91,8 +93,8 @@ MainWindow::MainWindow(QWidget* parent)
 
   connect(ui->actionNewProject, &QAction::triggered, this, &MainWindow::CreateNewProject);
   connect(ui->actionOpenProject, &QAction::triggered, this, &MainWindow::OpenProject);
-  connect(ui->actionOpenImage, &QAction::triggered, this, &MainWindow::Load);
   connect(ui->actionAddImages, &QAction::triggered, this, &MainWindow::AddImagesToProject);
+  connect(ui->actionImportDataAsImage, &QAction::triggered, this, &MainWindow::ImportDataAsImage);
   connect(ui->actionSave, &QAction::triggered, this, &MainWindow::Save);
   connect(ui->actionExit, &QAction::triggered, this, &QMainWindow::close);
 
@@ -1833,6 +1835,206 @@ void MainWindow::LoadLastProject()
   else
   {
     std::cout << "Failed to load last project" << std::endl;
+  }
+}
+
+void MainWindow::ImportDataAsImage()
+{
+  // Select metadata file for import
+  QString filepath = QFileDialog::getOpenFileName(
+      this, "Import Data as Image", QDir::homePath(),
+      "Data Files (*.txt *.dat *.meta);;All Files (*)");
+
+  if (filepath.isEmpty())
+  {
+    return;
+  }
+
+  // Parse header to get dimensions with detailed error reporting
+  int width, height;
+  MetadataImporter::ImportError parse_error;
+  if (!MetadataImporter::ParseHeaderWithError(filepath, width, height, parse_error))
+  {
+    QString error_title;
+    switch (parse_error.type)
+    {
+      case MetadataImporter::ImportError::FILE_NOT_FOUND:
+        error_title = "File Access Error";
+        break;
+      case MetadataImporter::ImportError::INVALID_HEADER_FORMAT:
+        error_title = "Invalid File Format";
+        break;
+      case MetadataImporter::ImportError::INVALID_DIMENSIONS:
+        error_title = "Invalid Dimensions";
+        break;
+      default:
+        error_title = "Parse Error";
+        break;
+    }
+    QMessageBox::critical(this, error_title, parse_error.message);
+    return;
+  }
+
+  // Show import settings dialog
+  MetadataImportSettingsDialog dialog(filepath, width, height, this);
+  if (dialog.exec() != QDialog::Accepted)
+  {
+    return;
+  }
+
+  // Get import settings from dialog
+  MetadataImporter::ImportSettings settings = dialog.GetSettings();
+
+  // Process metadata file with detailed error reporting
+  statusBar()->showMessage("Processing metadata file...", 5000);
+  QApplication::processEvents();
+
+  MetadataImporter::ImportError import_error;
+  QImage image = MetadataImporter::ImportMetadataFileWithError(filepath, settings, import_error);
+  if (image.isNull())
+  {
+    QString error_title;
+    switch (import_error.type)
+    {
+      case MetadataImporter::ImportError::DATA_MISMATCH:
+        error_title = "Data Mismatch";
+        break;
+      case MetadataImporter::ImportError::INVALID_NUMERIC_DATA:
+        error_title = "File Format Error";
+        break;
+      case MetadataImporter::ImportError::CROP_BOUNDARY_ERROR:
+        error_title = "Invalid Crop Region";
+        break;
+      case MetadataImporter::ImportError::FILE_NOT_FOUND:
+        error_title = "File Access Error";
+        break;
+      default:
+        error_title = "Import Failed";
+        break;
+    }
+    QMessageBox::critical(this, error_title, import_error.message);
+    statusBar()->showMessage("Import failed", 3000);
+    return;
+  }
+
+  // Generate output filename
+  QFileInfo file_info(filepath);
+  QString base_name = file_info.baseName();
+  QString temp_filename = QString("metadata_%1_%2x%3.png")
+                         .arg(base_name)
+                         .arg(image.width())
+                         .arg(image.height());
+
+  QString temp_path;
+  bool save_to_project = false;
+
+  if (!project_directory_.isEmpty())
+  {
+    // Save to project if one is loaded
+    QString images_dir = project_directory_ + "/images";
+    QDir dir;
+    if (!dir.exists(images_dir))
+    {
+      dir.mkpath(images_dir);
+    }
+
+    temp_path = images_dir + "/" + temp_filename;
+    save_to_project = true;
+  }
+  else
+  {
+    // Save to temporary location if no project is loaded
+    QString temp_dir = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+    temp_path = temp_dir + "/" + temp_filename;
+  }
+
+  // Save processed image
+  if (!image.save(temp_path, "PNG"))
+  {
+    QMessageBox::critical(this, "Save Failed",
+        "Failed to save processed image.\n\n"
+        "Path: " + temp_path);
+    statusBar()->showMessage("Save failed", 3000);
+    return;
+  }
+
+  // Apply project-level crop if enabled and saving to project
+  if (save_to_project && project_config_.IsCropEnabled())
+  {
+    const CropConfig& crop = project_config_.GetCropConfig();
+    QImage loaded_image(temp_path);
+
+    if (!loaded_image.isNull())
+    {
+      int crop_width = crop.width > 0 ? crop.width : loaded_image.width() - crop.x;
+      int crop_height = crop.height > 0 ? crop.height : loaded_image.height() - crop.y;
+
+      // Validate crop bounds
+      if (crop.x >= 0 && crop.y >= 0 &&
+          crop.x + crop_width <= loaded_image.width() &&
+          crop.y + crop_height <= loaded_image.height())
+      {
+        QImage cropped = loaded_image.copy(crop.x, crop.y, crop_width, crop_height);
+
+        // Save cropped image (overwrite the original)
+        if (!cropped.save(temp_path))
+        {
+          QMessageBox::warning(this, "Crop Failed",
+              "Failed to apply project crop settings.\n\n"
+              "Using original processed image.");
+        }
+      }
+    }
+  }
+
+  if (save_to_project)
+  {
+    // Rescan project images and save config
+    ScanProjectImages();
+    SaveProjectConfig();
+
+    // Load the new image
+    int image_index = image_list_.indexOf(temp_filename);
+    if (image_index >= 0)
+    {
+      LoadImageAtIndex(image_index);
+    }
+    else if (current_image_path_.isEmpty() && !image_list_.isEmpty())
+    {
+      LoadImageAtIndex(0);
+    }
+
+    statusBar()->showMessage(QString("Metadata imported as: %1").arg(temp_filename), 5000);
+    QMessageBox::information(this, "Import Complete",
+        QString("Metadata successfully imported as grayscale image.\n\n"
+                "File: %1\n"
+                "Dimensions: %2 x %3\n"
+                "Added to project images.")
+                .arg(temp_filename)
+                .arg(image.width())
+                .arg(image.height()));
+  }
+  else
+  {
+    // Load image directly if no project
+    auto pixmap = QPixmap(temp_path);
+    ui->label->setPixmap(pixmap);
+    ui->label->setFixedSize(pixmap.size());
+    current_image_path_ = temp_path;
+    current_image_index_ = -1;
+
+    UpdateWindowTitle();
+    UpdateStatusBar();
+
+    statusBar()->showMessage(QString("Metadata imported: %1").arg(temp_filename), 5000);
+    QMessageBox::information(this, "Import Complete",
+        QString("Metadata successfully imported as grayscale image.\n\n"
+                "File: %1\n"
+                "Dimensions: %2 x %3\n"
+                "No project loaded - image loaded directly.")
+                .arg(temp_filename)
+                .arg(image.width())
+                .arg(image.height()));
   }
 }
 

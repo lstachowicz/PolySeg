@@ -36,6 +36,7 @@ class MainWindow : public QMainWindow
   void PreviousClass();
   void SelectClassByNumber(int number);
   void AddImagesToProject();
+  void ImportDataAsImage();
 
   // Project Management
   void CreateNewProject();

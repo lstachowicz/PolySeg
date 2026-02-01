@@ -79,6 +79,8 @@ set(POLYSEG_SOURCES
     src/shortcutssettingstab.cpp
     src/aipluginmanager.cpp
     src/pluginwizard.cpp
+    src/metadataimporter.cpp
+    src/metadataimportsettingsdialog.cpp
     src/wizardpages/welcomepage.cpp
     src/wizardpages/pluginselectionpage.cpp
     src/wizardpages/custompluginpage.cpp
@@ -112,6 +114,8 @@ set(POLYSEG_HEADERS
     src/shortcutssettingstab.h
     src/aipluginmanager.h
     src/pluginwizard.h
+    src/metadataimporter.h
+    src/metadataimportsettingsdialog.h
     src/wizardpages/welcomepage.h
     src/wizardpages/pluginselectionpage.h
     src/wizardpages/custompluginpage.h
@@ -138,6 +142,7 @@ set(POLYSEG_UI_FILES
     src/shortcuteditdialog.ui
     src/modelcomparisondialog.ui
     src/modelregistrationdialog.ui
+    src/metadataimportsettingsdialog.ui
     src/wizardpages/welcomepage.ui
     src/wizardpages/pluginselectionpage.ui
     src/wizardpages/custompluginpage.ui

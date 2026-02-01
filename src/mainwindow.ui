@@ -56,8 +56,8 @@
     <addaction name="separator"/>
     <addaction name="actionProjectSettings"/>
     <addaction name="separator"/>
-    <addaction name="actionOpenImage"/>
     <addaction name="actionAddImages"/>
+    <addaction name="actionImportDataAsImage"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="separator"/>
@@ -129,26 +129,23 @@
    <addaction name="menuHelp"/>
   </widget>
 
-  <action name="actionOpenImage">
-   <property name="text">
-    <string>Open Image</string>
-   </property>
-   <property name="toolTip">
-    <string>Open Image (Ctrl+O) - Load a single image</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
   <action name="actionAddImages">
    <property name="text">
-    <string>Add Images to Project...</string>
+    <string>Import Images</string>
    </property>
    <property name="toolTip">
-    <string>Add Images to Project - Add more images to existing project</string>
+    <string>Import Images - Add images to existing project</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+A</string>
+   </property>
+  </action>
+  <action name="actionImportDataAsImage">
+   <property name="text">
+    <string>Import Data as Image</string>
+   </property>
+   <property name="toolTip">
+    <string>Import numerical data file as grayscale image</string>
    </property>
   </action>
   <action name="actionSave">
