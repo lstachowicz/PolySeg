@@ -109,8 +109,8 @@ std::vector<uint8_t> Threshold(const polyseg::Frame<float>& log_abs)
 
   const uint8_t otsu = OtsuThreshold(norm.data(), n);
   const uint8_t t = std::max(static_cast<uint8_t>(otsu * 65 / 100), uint8_t{8});
-  std::cout << "[EdgeDetect] max_log=" << max_val << " otsu=" << (int)otsu
-            << " threshold=" << (int)t << std::endl;
+  std::cout << "[EdgeDetect] max_log=" << max_val << " otsu=" << static_cast<int>(otsu)
+            << " threshold=" << static_cast<int>(t) << std::endl;
 
   std::vector<uint8_t> edges(n, 0);
   for (size_t i = 0; i < n; ++i) edges[i] = (norm[i] >= t) ? 1 : 0;
