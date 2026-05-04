@@ -1,6 +1,7 @@
 #include <segcore/history.h>
 
-namespace segcore {
+namespace segcore
+{
 
 void UndoStack::Push(Command cmd)
 {

@@ -1,10 +1,10 @@
 #ifndef POLYSEG_SEGCORE_IANNOTATION_SET_H
 #define POLYSEG_SEGCORE_IANNOTATION_SET_H
 
-#include <vector>
-
 #include <segcore/segment.h>
 #include <segcore/types.h>
+
+#include <vector>
 
 namespace segcore
 {

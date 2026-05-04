@@ -5,7 +5,8 @@
 #include <segcore/artifact.h>
 #include <segcore/types.h>
 
-namespace segcore {
+namespace segcore
+{
 
 polyseg::Frame<Rgb24> NormaliseForDisplay(const Artifact& artifact);
 

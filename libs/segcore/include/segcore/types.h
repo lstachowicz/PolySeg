@@ -3,17 +3,15 @@
 
 #include <cstdint>
 
-namespace segcore {
+namespace segcore
+{
 
 struct Point2D
 {
   int x = 0;
   int y = 0;
 
-  bool operator==(const Point2D& other) const
-  {
-    return x == other.x && y == other.y;
-  }
+  bool operator==(const Point2D& other) const { return x == other.x && y == other.y; }
 };
 
 struct Rgb24
@@ -22,10 +20,7 @@ struct Rgb24
   uint8_t g = 0;
   uint8_t b = 0;
 
-  bool operator==(const Rgb24& other) const
-  {
-    return r == other.r && g == other.g && b == other.b;
-  }
+  bool operator==(const Rgb24& other) const { return r == other.r && g == other.g && b == other.b; }
 };
 
 using ArtifactId = uint32_t;

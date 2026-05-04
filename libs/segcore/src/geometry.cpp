@@ -3,9 +3,11 @@
 #include <cmath>
 #include <limits>
 
-namespace segcore {
+namespace segcore
+{
 
-namespace {
+namespace
+{
 
 double Distance(Point2D a, Point2D b)
 {
@@ -94,8 +96,8 @@ bool PointInPolygon(const std::vector<Point2D>& pts, Point2D pos)
     int yi = pts[i].y;
     int xj = pts[j].x;
     int yj = pts[j].y;
-    bool intersects = ((yi > pos.y) != (yj > pos.y)) &&
-                      (pos.x < (xj - xi) * (pos.y - yi) / (yj - yi) + xi);
+    bool intersects =
+        ((yi > pos.y) != (yj > pos.y)) && (pos.x < (xj - xi) * (pos.y - yi) / (yj - yi) + xi);
     if (intersects)
     {
       inside = !inside;

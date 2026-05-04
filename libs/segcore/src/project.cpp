@@ -1,6 +1,7 @@
 #include <segcore/project.h>
 
-namespace segcore {
+namespace segcore
+{
 
 ArtifactId Project::AddArtifact(Artifact artifact)
 {

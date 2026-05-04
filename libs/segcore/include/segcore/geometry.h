@@ -1,11 +1,13 @@
 #ifndef POLYSEG_SEGCORE_GEOMETRY_H
 #define POLYSEG_SEGCORE_GEOMETRY_H
 
-#include <vector>
 #include <segcore/segment.h>
 #include <segcore/types.h>
 
-namespace segcore {
+#include <vector>
+
+namespace segcore
+{
 
 struct PointHit
 {

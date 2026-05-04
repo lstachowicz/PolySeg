@@ -1,12 +1,14 @@
 #ifndef POLYSEG_SEGCORE_PROJECT_H
 #define POLYSEG_SEGCORE_PROJECT_H
 
-#include <unordered_map>
 #include <segcore/annotation_set.h>
 #include <segcore/artifact.h>
 #include <segcore/types.h>
 
-namespace segcore {
+#include <unordered_map>
+
+namespace segcore
+{
 
 class Project
 {

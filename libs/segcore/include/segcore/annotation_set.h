@@ -1,14 +1,16 @@
 #ifndef POLYSEG_SEGCORE_ANNOTATION_SET_H
 #define POLYSEG_SEGCORE_ANNOTATION_SET_H
 
-#include <optional>
-#include <vector>
 #include <segcore/history.h>
 #include <segcore/iannotation_set.h>
 #include <segcore/segment.h>
 #include <segcore/types.h>
 
-namespace segcore {
+#include <optional>
+#include <vector>
+
+namespace segcore
+{
 
 class AnnotationSet : public IAnnotationSet
 {

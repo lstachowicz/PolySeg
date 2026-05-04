@@ -5,7 +5,8 @@
 #include <cstdint>
 #include <vector>
 
-namespace polyseg {
+namespace polyseg
+{
 
 template <typename T>
 class Frame
@@ -13,10 +14,7 @@ class Frame
  public:
   Frame() : width_(0), height_(0) {}
 
-  Frame(uint16_t width, uint16_t height)
-      : width_(width), height_(height), data_(width * height)
-  {
-  }
+  Frame(uint16_t width, uint16_t height) : width_(width), height_(height), data_(width * height) {}
 
   Frame(uint16_t width, uint16_t height, const T* data)
       : width_(width), height_(height), data_(data, data + width * height)

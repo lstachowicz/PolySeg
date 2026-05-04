@@ -2,7 +2,8 @@
 
 #include <algorithm>
 
-namespace segcore {
+namespace segcore
+{
 
 Segment* AnnotationSet::FindSegment(SegmentId id)
 {
@@ -25,21 +26,21 @@ void AnnotationSet::AddPoint(SegmentId id, Point2D p)
 {
   if (has_in_progress_ && in_progress_.id == id)
   {
-    undo_stack_.Push(
-        {[this, id]()
-         {
-           if (has_in_progress_ && in_progress_.id == id && !in_progress_.points.empty())
-           {
-             in_progress_.points.pop_back();
-           }
-         },
-         [this, id, p]()
-         {
-           if (has_in_progress_ && in_progress_.id == id)
-           {
-             in_progress_.points.push_back(p);
-           }
-         }});
+    undo_stack_.Push({[this, id]()
+                      {
+                        if (has_in_progress_ && in_progress_.id == id &&
+                            !in_progress_.points.empty())
+                        {
+                          in_progress_.points.pop_back();
+                        }
+                      },
+                      [this, id, p]()
+                      {
+                        if (has_in_progress_ && in_progress_.id == id)
+                        {
+                          in_progress_.points.push_back(p);
+                        }
+                      }});
     return;
   }
   Segment* seg = FindSegment(id);
@@ -189,10 +190,9 @@ bool AnnotationSet::CommitSegment(SegmentId id)
   undo_stack_.Push(
       {[this, to_commit]()
        {
-         segments_.erase(
-             std::remove_if(segments_.begin(), segments_.end(),
-                            [&](const Segment& s) { return s.id == to_commit.id; }),
-             segments_.end());
+         segments_.erase(std::remove_if(segments_.begin(), segments_.end(),
+                                        [&](const Segment& s) { return s.id == to_commit.id; }),
+                         segments_.end());
          in_progress_ = to_commit;
          has_in_progress_ = true;
        },
@@ -224,19 +224,17 @@ void AnnotationSet::DeleteSegment(SegmentId id)
   {
     selected_id_ = kInvalidSegmentId;
   }
-  undo_stack_.Push(
-      {[this, saved, saved_index]()
-       {
-         int insert_at = std::min(saved_index, static_cast<int>(segments_.size()));
-         segments_.insert(segments_.begin() + insert_at, saved);
-       },
-       [this, id]()
-       {
-         segments_.erase(
-             std::remove_if(segments_.begin(), segments_.end(),
-                            [id](const Segment& s) { return s.id == id; }),
-             segments_.end());
-       }});
+  undo_stack_.Push({[this, saved, saved_index]()
+                    {
+                      int insert_at = std::min(saved_index, static_cast<int>(segments_.size()));
+                      segments_.insert(segments_.begin() + insert_at, saved);
+                    },
+                    [this, id]()
+                    {
+                      segments_.erase(std::remove_if(segments_.begin(), segments_.end(),
+                                                     [id](const Segment& s) { return s.id == id; }),
+                                      segments_.end());
+                    }});
 }
 
 void AnnotationSet::ClearAll()
@@ -306,21 +304,19 @@ SegmentId AnnotationSet::PasteSegment()
   Segment pasted = clipboard_.value();
   pasted.id = next_id_++;
   pasted.selected = false;
-  undo_stack_.Push(
-    {[this, id = pasted.id]()
-     {
-       segments_.erase(
-           std::remove_if(segments_.begin(), segments_.end(),
-                          [id](const Segment& s) { return s.id == id; }),
-           segments_.end());
-     },
-     [this, pasted]()
-     {
-       auto it = std::find_if(segments_.begin(), segments_.end(),
-                              [&](const Segment& s) { return s.id == pasted.id; });
-       if (it == segments_.end())
-         segments_.push_back(pasted);
-     }});
+  undo_stack_.Push({[this, id = pasted.id]()
+                    {
+                      segments_.erase(std::remove_if(segments_.begin(), segments_.end(),
+                                                     [id](const Segment& s) { return s.id == id; }),
+                                      segments_.end());
+                    },
+                    [this, pasted]()
+                    {
+                      auto it = std::find_if(segments_.begin(), segments_.end(),
+                                             [&](const Segment& s) { return s.id == pasted.id; });
+                      if (it == segments_.end())
+                        segments_.push_back(pasted);
+                    }});
   return pasted.id;
 }
 

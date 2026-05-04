@@ -1,10 +1,12 @@
 #ifndef POLYSEG_SEGCORE_SEGMENT_H
 #define POLYSEG_SEGCORE_SEGMENT_H
 
-#include <vector>
 #include <segcore/types.h>
 
-namespace segcore {
+#include <vector>
+
+namespace segcore
+{
 
 struct Segment
 {

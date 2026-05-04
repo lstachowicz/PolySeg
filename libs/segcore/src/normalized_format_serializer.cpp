@@ -3,7 +3,8 @@
 #include <iomanip>
 #include <sstream>
 
-namespace segcore {
+namespace segcore
+{
 
 std::string SegmentsToNormalizedFormat(const std::vector<Segment>& segs, int w, int h)
 {
@@ -18,8 +19,7 @@ std::string SegmentsToNormalizedFormat(const std::vector<Segment>& segs, int w, 
     out << seg.class_id;
     for (const auto& p : seg.points)
     {
-      out << ' ' << static_cast<double>(p.x) / w
-          << ' ' << static_cast<double>(p.y) / h;
+      out << ' ' << static_cast<double>(p.x) / w << ' ' << static_cast<double>(p.y) / h;
     }
     out << '\n';
   }

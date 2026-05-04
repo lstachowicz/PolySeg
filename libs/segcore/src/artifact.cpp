@@ -1,6 +1,7 @@
 #include <segcore/artifact.h>
 
-namespace segcore {
+namespace segcore
+{
 
 int Artifact::width() const
 {

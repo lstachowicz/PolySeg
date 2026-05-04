@@ -1,12 +1,14 @@
 #ifndef POLYSEG_SEGCORE_ARTIFACT_H
 #define POLYSEG_SEGCORE_ARTIFACT_H
 
-#include <string>
-#include <variant>
 #include <imgproc/frame.h>
 #include <segcore/types.h>
 
-namespace segcore {
+#include <string>
+#include <variant>
+
+namespace segcore
+{
 
 struct ImageArtifact
 {

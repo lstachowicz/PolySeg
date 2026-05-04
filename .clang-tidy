@@ -24,6 +24,12 @@ Checks: >
 WarningsAsErrors: ''
 
 HeaderFilterRegex: '.*'
+ExcludeHeaderFilterRegex: 'CMakeLists\.txt'
+
+CompileFlags:
+  Add:
+    - '-std=c++17'
+    - '-I${CMAKE_SOURCE_DIR}/libs'
 
 CheckOptions:
   - key: readability-identifier-naming.ClassCase

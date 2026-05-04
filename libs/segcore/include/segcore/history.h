@@ -4,7 +4,8 @@
 #include <deque>
 #include <functional>
 
-namespace segcore {
+namespace segcore
+{
 
 struct Command
 {

@@ -1,15 +1,16 @@
 #ifndef POLYSEG_IMGPROC_CONVOLUTION_H
 #define POLYSEG_IMGPROC_CONVOLUTION_H
 
+#include <imgproc/frame.h>
+#include <imgproc/kernel.h>
+
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <limits>
 
-#include <imgproc/frame.h>
-#include <imgproc/kernel.h>
-
-namespace polyseg {
+namespace polyseg
+{
 
 class Convolution
 {
@@ -47,8 +48,8 @@ class Convolution
               sum += k[ky * N + kx] * src[(y + ky - border) * width + (x + kx - border)];
             }
           }
-          sum = std::max(0.0, std::min(static_cast<double>(std::numeric_limits<T>::max()),
-                                       sum * factor));
+          sum = std::max(
+              0.0, std::min(static_cast<double>(std::numeric_limits<T>::max()), sum * factor));
           output.data()[y * width + x] = static_cast<T>(sum);
         }
       }
@@ -146,10 +147,9 @@ struct Convolution::detail<5, T>
         float value =
             kf[0] * r0[-2] + kf[1] * r0[-1] + kf[2] * r0[0] + kf[3] * r0[1] + kf[4] * r0[2] +
             kf[5] * r1[-2] + kf[6] * r1[-1] + kf[7] * r1[0] + kf[8] * r1[1] + kf[9] * r1[2] +
-            kf[10] * r2[-2] + kf[11] * r2[-1] + kf[12] * r2[0] + kf[13] * r2[1] +
-            kf[14] * r2[2] + kf[15] * r3[-2] + kf[16] * r3[-1] + kf[17] * r3[0] +
-            kf[18] * r3[1] + kf[19] * r3[2] + kf[20] * r4[-2] + kf[21] * r4[-1] +
-            kf[22] * r4[0] + kf[23] * r4[1] + kf[24] * r4[2];
+            kf[10] * r2[-2] + kf[11] * r2[-1] + kf[12] * r2[0] + kf[13] * r2[1] + kf[14] * r2[2] +
+            kf[15] * r3[-2] + kf[16] * r3[-1] + kf[17] * r3[0] + kf[18] * r3[1] + kf[19] * r3[2] +
+            kf[20] * r4[-2] + kf[21] * r4[-1] + kf[22] * r4[0] + kf[23] * r4[1] + kf[24] * r4[2];
         value = std::max(0.0f, std::min(static_cast<float>(std::numeric_limits<T>::max()), value));
         *dst++ = static_cast<T>(value);
         ++r0;

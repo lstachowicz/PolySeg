@@ -3,14 +3,14 @@
 
 #include <array>
 
-namespace polyseg {
+namespace polyseg
+{
 
 template <int N>
 class Kernel
 {
  public:
-  Kernel(const std::array<float, N * N>& data, float factor = 1.0f)
-      : data_(data), factor_(factor)
+  Kernel(const std::array<float, N * N>& data, float factor = 1.0f) : data_(data), factor_(factor)
   {
   }
 

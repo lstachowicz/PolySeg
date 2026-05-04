@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <cstdint>
 
-namespace segcore {
+namespace segcore
+{
 
 polyseg::Frame<Rgb24> NormaliseForDisplay(const Artifact& artifact)
 {
