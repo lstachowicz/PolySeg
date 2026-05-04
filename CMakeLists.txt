@@ -68,6 +68,7 @@ set(POLYSEG_SOURCES
     src/modeldownloadmanager.cpp
     src/modelregistrationdialog.cpp
     src/polygoncanvas.cpp
+    src/qtadapter.cpp
     src/projectconfig.cpp
     src/pythonenvironmentmanager.cpp
     src/settingstabbase.cpp
@@ -79,6 +80,7 @@ set(POLYSEG_SOURCES
     src/shortcutssettingstab.cpp
     src/aipluginmanager.cpp
     src/pluginwizard.cpp
+    src/edgedetector.cpp
     src/metadataimporter.cpp
     src/metadataimportsettingsdialog.cpp
     src/wizardpages/welcomepage.cpp
@@ -114,6 +116,7 @@ set(POLYSEG_HEADERS
     src/shortcutssettingstab.h
     src/aipluginmanager.h
     src/pluginwizard.h
+    src/edgedetector.h
     src/metadataimporter.h
     src/metadataimportsettingsdialog.h
     src/wizardpages/welcomepage.h
@@ -179,12 +182,20 @@ add_library(PolySeg_lib
     ${POLYSEG_RESOURCES}
 )
 
+# Include directories
+target_include_directories(PolySeg_lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/libs
+)
+
 # Link Qt libraries to the library
-target_link_libraries(PolySeg_lib PRIVATE
+target_link_libraries(PolySeg_lib PUBLIC
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
     Qt6::Network
+    imgproc
+    segcore
 )
 
 # Create the main PolySeg executable
@@ -295,39 +306,12 @@ endif()
 enable_testing()
 
 # Add Google Test from external directory
+add_subdirectory(libs/imgproc)
+add_subdirectory(libs/segcore)
 add_subdirectory(external/googletest)
 
-# Create unit test executable
-add_executable(PolySeg_tests
-    tests/main_test.cpp
-    # Add additional test files here as you create them
-)
-
-# Link Google Test libraries and PolySeg library to test executable
-target_link_libraries(PolySeg_tests PRIVATE
-    gtest
-    gtest_main
-    PolySeg_lib
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Widgets
-    Qt6::Network
-)
-
-# Apply coverage flags to test executable if enabled
-if(ENABLE_COVERAGE AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"))
-    target_compile_options(PolySeg_tests PRIVATE ${COVERAGE_FLAGS})
-    target_link_libraries(PolySeg_tests PRIVATE ${COVERAGE_FLAGS})
-endif()
-
-# Include test directories
-target_include_directories(PolySeg_tests PRIVATE
-    src
-    external/googletest/googletest/include
-)
-
-# Add tests to CTest
-add_test(NAME PolySeg_unit_tests COMMAND PolySeg_tests)
+# Add unit tests
+add_subdirectory(tests)
 
 # Coverage target for easy usage
 if(ENABLE_COVERAGE AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang"))

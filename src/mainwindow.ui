@@ -71,6 +71,9 @@
     <addaction name="actionZoomOut"/>
     <addaction name="actionResetZoom"/>
     <addaction name="separator"/>
+    <addaction name="actionSnapToEdges"/>
+    <addaction name="actionEdgeMapOnly"/>
+    <addaction name="separator"/>
     <addaction name="actionNextImage"/>
     <addaction name="actionPreviousImage"/>
     <addaction name="separator"/>
@@ -165,6 +168,34 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionEdgeMapOnly">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Edge Map Only</string>
+   </property>
+   <property name="toolTip">
+    <string>Show only detected edges (white on black)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+E</string>
+   </property>
+  </action>
+  <action name="actionSnapToEdges">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap to Edges</string>
+   </property>
+   <property name="toolTip">
+    <string>Snap polygon points to detected edges (Ctrl+E)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
    </property>
   </action>
   <action name="actionZoomIn">

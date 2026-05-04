@@ -4,6 +4,10 @@
 #include <QMainWindow>
 
 #include "projectconfig.h"
+#include <segcore/annotation_set.h>
+#include <segcore/project.h>
+#include <segcore/normalized_format_serializer.h>
+#include "qtadapter.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -84,6 +88,7 @@ class MainWindow : public QMainWindow
 
  protected:
   void keyPressEvent(QKeyEvent* event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
  private:
   void SaveProjectConfig();
@@ -97,6 +102,7 @@ class MainWindow : public QMainWindow
   void UpdateRecentProjectsMenu();
   void LoadLastProject();
   QString GetProjectStatistics() const;
+  QVector<QColor> BuildClassColorTable() const;
 
   Ui::MainWindow* ui;
   QString current_image_path_;
@@ -120,5 +126,8 @@ class MainWindow : public QMainWindow
 
   // AI Plugin Manager
   AIPluginManager* ai_plugin_manager_;
+
+  segcore::Project project_core_;
+  segcore::ArtifactId current_artifact_id_ = segcore::kInvalidArtifactId;
 };
 #endif  // MAINWINDOW_H

@@ -46,6 +46,25 @@
 #include "settingsdialog.h"
 #include "ui_mainwindow.h"
 
+static std::string ReadFileAsString(const QString& path)
+{
+  QFile f(path);
+  if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return {};
+  return f.readAll().toStdString();
+}
+
+static void WriteStringToFile(const QString& path, const std::string& text)
+{
+  if (text.empty())
+  {
+    QFile::remove(path);
+    return;
+  }
+  QFile f(path);
+  if (f.open(QIODevice::WriteOnly | QIODevice::Text))
+    f.write(QByteArray::fromStdString(text));
+}
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
       ui(new Ui::MainWindow),
@@ -102,6 +121,11 @@ MainWindow::MainWindow(QWidget* parent)
   connect(ui->actionZoomOut, &QAction::triggered, this, &MainWindow::Decrease);
   connect(ui->actionResetZoom, &QAction::triggered, this, &MainWindow::ResetZoom);
 
+  connect(ui->actionSnapToEdges, &QAction::toggled, ui->label,
+          &PolygonCanvas::SetSnapToEdges);
+  connect(ui->actionEdgeMapOnly, &QAction::toggled, ui->label,
+          &PolygonCanvas::SetEdgeMapOnly);
+
   // Class navigation shortcuts (Ctrl+] and Ctrl+[)
   QShortcut* next_class_shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_BracketRight), this);
   connect(next_class_shortcut, &QShortcut::activated, this, &MainWindow::NextClass);
@@ -146,6 +170,12 @@ MainWindow::MainWindow(QWidget* parent)
           &MainWindow::ShowKeyboardShortcuts);
   connect(ui->actionEditShortcuts, &QAction::triggered, this, &MainWindow::EditShortcuts);
   connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::ShowAboutDialog);
+
+  // Install event filter on canvas and scroll area to intercept arrow key navigation
+  // regardless of which widget has focus (QScrollArea would otherwise consume these keys)
+  ui->label->installEventFilter(this);
+  ui->scrollArea->installEventFilter(this);
+  ui->scrollArea->viewport()->installEventFilter(this);
 
   // Load keyboard shortcuts
   LoadShortcuts();
@@ -196,6 +226,28 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
   }
   
   QMainWindow::keyPressEvent(event);
+}
+
+bool MainWindow::eventFilter(QObject* obj, QEvent* event)
+{
+  if (event->type() == QEvent::KeyPress)
+  {
+    QKeyEvent* key = static_cast<QKeyEvent*>(event);
+    if (key->modifiers() == Qt::NoModifier)
+    {
+      if (key->key() == Qt::Key_Right)
+      {
+        NextImage();
+        return true;
+      }
+      if (key->key() == Qt::Key_Left)
+      {
+        PreviousImage();
+        return true;
+      }
+    }
+  }
+  return QMainWindow::eventFilter(obj, event);
 }
 
 void MainWindow::Load()
@@ -460,8 +512,7 @@ void MainWindow::Save()
     return;
   }
 
-  auto polygons = ui->label->GetPolygons();
-  if (polygons.isEmpty())
+  if (!ui->label->HasAnnotations())
   {
     QMessageBox::warning(this, "No Annotations",
                          "Please create polygon annotations first.\n\n"
@@ -502,38 +553,37 @@ void MainWindow::SaveProjectConfig()
 
 void MainWindow::AutoSaveCurrentImage()
 {
-  if (current_image_path_.isEmpty() || project_directory_.isEmpty())
-  {
-    return;
-  }
+  if (current_artifact_id_ == segcore::kInvalidArtifactId) return;
+  if (current_image_path_.isEmpty() || project_directory_.isEmpty()) return;
 
-  auto polygons = ui->label->GetPolygons();
+  auto& anns = project_core_.GetAnnotations(current_artifact_id_);
+  const auto* art = project_core_.GetArtifact(current_artifact_id_);
+  if (!art) return;
 
-  // Get filename without extension
   QFileInfo fileInfo(current_image_path_);
   QString labelsDir = project_directory_ + "/labels";
   QString labelPath = labelsDir + "/" + fileInfo.completeBaseName() + ".txt";
 
-  if (polygons.isEmpty())
+  std::string text = segcore::SegmentsToNormalizedFormat(anns.GetSegments(), art->width(), art->height());
+  if (!text.empty())
   {
-    // Remove label file if no polygons
-    if (QFile::exists(labelPath))
-    {
-      QFile::remove(labelPath);
-    }
-  }
-  else
-  {
-    // Ensure labels directory exists
     QDir dir;
     if (!dir.exists(labelsDir))
-    {
       dir.mkpath(labelsDir);
-    }
-    
-    // Save annotations
-    ui->label->ExportAnnotations(labelPath, 0);
   }
+  WriteStringToFile(labelPath, text);
+}
+
+QVector<QColor> MainWindow::BuildClassColorTable() const
+{
+  QVector<QColor> colors;
+  for (const auto& cls : project_config_.GetClasses())
+  {
+    while (colors.size() <= cls.index)
+      colors.append(Qt::red);
+    colors[cls.index] = cls.color;
+  }
+  return colors;
 }
 
 void MainWindow::LoadImageAtIndex(int index)
@@ -550,55 +600,76 @@ void MainWindow::LoadImageAtIndex(int index)
     return;
   }
 
-  // Auto-save current image before switching
   AutoSaveCurrentImage();
 
-  // Load new image
+  // Save clipboard from current image before switching
+  const segcore::Segment* clipboard_backup = nullptr;
+  if (ui->label->GetAnnotationSet() != nullptr)
+  {
+    auto* current_set = dynamic_cast<segcore::AnnotationSet*>(ui->label->GetAnnotationSet());
+    if (current_set != nullptr)
+    {
+      clipboard_backup = current_set->GetClipboard();
+    }
+  }
+
   current_image_index_ = index;
   QString imagePath = project_directory_ + "/images/" + image_list_[index];
 
-  QPixmap pixmap(imagePath);
-  if (pixmap.isNull())
+  QImage qimg(imagePath);
+  if (qimg.isNull())
   {
     QMessageBox::critical(this, "Error", "Failed to load image:\n" + imagePath);
     return;
   }
 
   current_image_path_ = imagePath;
-  ui->label->setPixmap(pixmap);
-  // Don't reset zoom - keep current zoom level
-  // ui->label->ResetZoom();
 
-  // Load existing annotations if they exist
+  segcore::Artifact artifact;
+  artifact.payload = segcore::ImageArtifact{qt_adapter::QImageToFrame(qimg), imagePath.toStdString()};
+  current_artifact_id_ = project_core_.AddArtifact(std::move(artifact));
+  project_core_.SetCurrentArtifact(current_artifact_id_);
+
+  ui->label->LoadArtifact(*project_core_.GetArtifact(current_artifact_id_));
+  ui->label->SetAnnotationSet(&project_core_.GetAnnotations(current_artifact_id_));
+
+  // Restore clipboard to new image
+  if (clipboard_backup != nullptr)
+  {
+    auto* new_set = dynamic_cast<segcore::AnnotationSet*>(ui->label->GetAnnotationSet());
+    if (new_set != nullptr)
+    {
+      new_set->SetClipboard(clipboard_backup);
+    }
+  }
+
+  ui->label->SetClassColors(BuildClassColorTable());
+
   QFileInfo fileInfo(imagePath);
   QString labelPath = project_directory_ + "/labels/" + fileInfo.completeBaseName() + ".txt";
 
-  // Temporarily disconnect auto-save signal during loading
   disconnect(ui->label, &PolygonCanvas::PolygonsChanged, this, &MainWindow::AutoSaveCurrentImage);
 
-  if (QFile::exists(labelPath))
+  std::string text = ReadFileAsString(labelPath);
+  if (!text.empty())
   {
-    // Get class colors from project config
-    QVector<QColor> class_colors;
-    for (const auto& cls : project_config_.GetClasses())
+    auto segs = segcore::NormalizedFormatToSegments(text, qimg.width(), qimg.height());
+    auto& anns = project_core_.GetAnnotations(current_artifact_id_);
+    for (auto& s : segs)
     {
-      class_colors.append(cls.color);
+      auto id = anns.BeginSegment(s.class_id);
+      for (auto& p : s.points)
+        anns.AddPoint(id, p);
+      anns.CommitSegment(id);
     }
-
-    ui->label->LoadAnnotations(labelPath, class_colors);
-  }
-  else
-  {
-    ui->label->ClearAllPolygons();
   }
 
-  // Reconnect auto-save signal
   connect(ui->label, &PolygonCanvas::PolygonsChanged, this, &MainWindow::AutoSaveCurrentImage);
 
+  ui->label->update();
   UpdateWindowTitle();
   UpdateStatusBar();
 
-  // Set focus to canvas for keyboard shortcuts
   ui->label->setFocus();
 }
 
@@ -1179,7 +1250,7 @@ void MainWindow::ShowProjectStatistics()
 void MainWindow::UpdateStatusBar()
 {
   // Left: Current action (with split info if enabled)
-  int polygon_count = ui->label->GetPolygons().size();
+  int polygon_count = ui->label->GetAnnotationCount();
   QString left_text;
 
   if (!image_list_.isEmpty() && current_image_index_ >= 0 && project_config_.IsSplitEnabled())
@@ -2017,9 +2088,15 @@ void MainWindow::ImportDataAsImage()
   else
   {
     // Load image directly if no project
-    auto pixmap = QPixmap(temp_path);
-    ui->label->setPixmap(pixmap);
-    ui->label->setFixedSize(pixmap.size());
+    segcore::Artifact art;
+    art.payload = segcore::ImageArtifact{qt_adapter::QImageToFrame(image), temp_path.toStdString()};
+    current_artifact_id_ = project_core_.AddArtifact(std::move(art));
+    project_core_.SetCurrentArtifact(current_artifact_id_);
+    const auto* stored_art = project_core_.GetArtifact(current_artifact_id_);
+    ui->label->LoadArtifact(*stored_art);
+    ui->label->setFixedSize(QSize(stored_art->width(), stored_art->height()));
+    ui->label->SetAnnotationSet(&project_core_.GetAnnotations(current_artifact_id_));
+    ui->label->SetClassColors(BuildClassColorTable());
     current_image_path_ = temp_path;
     current_image_index_ = -1;
 
