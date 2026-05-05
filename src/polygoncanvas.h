@@ -2,18 +2,16 @@
 #define POLYGONCANVAS_H
 
 #include <QColor>
+#include <QImage>
 #include <QLabel>
 #include <QPoint>
 #include <QVector>
-#include <QStack>
 
-struct Polygon
-{
-  int class_id = 0;
-  QVector<QPoint> points;
-  QColor color = Qt::red;
-  bool is_selected = false;
-};
+#include "edgedetector.h"
+#include <imgproc/frame.h>
+#include <segcore/artifact.h>
+#include <segcore/iannotation_set.h>
+#include <segcore/types.h>
 
 class PolygonCanvas : public QLabel
 {
@@ -26,7 +24,6 @@ class PolygonCanvas : public QLabel
   void Decrease();
   void ResetZoom();
 
-  QVector<Polygon> GetPolygons() const { return polygons_; }
   QSize GetOriginalImageSize() const;
   void ExportAnnotations(const QString& filename, int class_id = 0);
   void LoadAnnotations(const QString& filepath, const QVector<QColor>& class_colors);
@@ -35,6 +32,7 @@ class PolygonCanvas : public QLabel
   void StartNewPolygon(int class_id = 0, QColor color = Qt::red);
   void FinishCurrentPolygon();
   void ClearCurrentPolygon();
+  void SetDrawingMode(int class_id);
 
   // Plugin integration
   void AddPolygonFromPlugin(const QVector<QPoint>& points, int class_id, const QColor& color);
@@ -44,18 +42,34 @@ class PolygonCanvas : public QLabel
   void SelectPolygon(const QPoint& pos);
   void DeselectAll();
   void DeleteSelectedPolygon();
-  int GetSelectedPolygonIndex() const { return selected_polygon_index_; }
+  int GetSelectedPolygonIndex() const;
+
+  // Annotation set injection
+  void SetAnnotationSet(segcore::IAnnotationSet* set);
+  segcore::IAnnotationSet* GetAnnotationSet() const { return annotation_set_; }
+  void LoadArtifact(const segcore::Artifact& artifact);
+  void SetClassColors(const QVector<QColor>& colors);
+
+  // Annotation queries
+  bool HasAnnotations() const;
+  int GetAnnotationCount() const;
 
   // Undo/Redo
   void Undo();
   void Redo();
-  bool CanUndo() const { return !undo_stack_.isEmpty(); }
-  bool CanRedo() const { return !redo_stack_.isEmpty(); }
+  bool CanUndo() const;
+  bool CanRedo() const;
 
   // Copy/Paste
   void CopySelectedPolygon();
   void PastePolygon();
-  bool HasClipboard() const { return clipboard_polygon_.points.size() > 0; }
+  bool HasClipboard() const;
+
+  // Edge snap
+  void SetSnapToEdges(bool enabled);
+  void SetEdgeMapOnly(bool enabled);
+  void ComputeEdges();
+  void setPixmap(const QPixmap& pixmap);
 
  signals:
   void PolygonsChanged();
@@ -69,40 +83,30 @@ class PolygonCanvas : public QLabel
   void keyPressEvent(QKeyEvent* ev) override;
 
  private:
-  // Helper methods
-  bool IsPointNearPosition(const QPoint& point, const QPoint& position, int tolerance) const;
-  int FindNearestSegmentIndex(const QPoint& position) const;
-  void HandlePointDrag(const QPoint& position);
-  void HandlePointInsertion(const QPoint& position);
+  bool IsPointNearPosition(const QPoint& point, const QPoint& position, float tolerance) const;
   void DrawImage(QPainter& painter);
-  void DrawPoints(QPainter& painter);
-  void DrawSegments(QPainter& painter);
-  void DrawClosingSegment(QPainter& painter);
+  void DrawEdgeOverlay(QPainter& painter);
+  void DrawCompletedSegments(QPainter& painter);
+  void DrawInProgressSegment(QPainter& painter);
+  QPoint ApplySnap(const QPoint& pos) const;
 
-  // Constants
   static constexpr int POINT_SELECT_TOLERANCE = 5;
   static constexpr int POINT_DRAW_SIZE = 5;
   static constexpr int LINE_WIDTH = 1;
 
-  // State management helpers
-  void SaveState();
-  void ClearRedoStack();
+  segcore::IAnnotationSet* annotation_set_ = nullptr;
+  polyseg::Frame<segcore::Rgb24> display_frame_;
+  segcore::SegmentId drag_segment_id_ = segcore::kInvalidSegmentId;
+  int drag_point_index_ = -1;
+  QVector<QColor> class_colors_;
+  int drawing_class_id_ = -1;
 
-  // Member variables
-  QVector<Polygon> polygons_;
-  Polygon current_polygon_;
-  int selected_polygon_index_ = -1;
-  QPoint active_point_;
-  QPoint active_point_pos_;
-  float scalar_ = 1.0;
+  QPoint cursor_pos_;
+  float scalar_ = 1.0f;
 
-  // Undo/Redo stacks
-  QStack<QVector<Polygon>> undo_stack_;
-  QStack<QVector<Polygon>> redo_stack_;
-  static constexpr int MAX_UNDO_HISTORY = 50;
-
-  // Clipboard
-  Polygon clipboard_polygon_;
+  EdgeDetector::Result edges_;
+  bool snap_to_edges_ = false;
+  bool edge_map_only_ = false;
 };
 
 #endif  // POLYGONCANVAS_H

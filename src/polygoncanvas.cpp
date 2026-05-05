@@ -5,194 +5,220 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QStyle>
-#include <QTextStream>
 
-#include <iostream>
-#include <limits>
+#include <algorithm>
 
-inline int Distance(const QPoint& p1, const QPoint& p2)
+#include "edgedetector.h"
+#include "logger.h"
+#include "qtadapter.h"
+#include <segcore/geometry.h>
+#include <segcore/normalized_format_serializer.h>
+
+namespace {
+
+QPoint ClampToImageBounds(const QPoint& point, const QSize& image_size)
 {
-  auto result = sqrt(pow(p1.x() - p2.x(), 2) + pow(p1.y() - p2.y(), 2));
-  return result;
-}
-
-// Oblicza odległość punktu od segmentu linii
-inline float DistanceFromPointToSegment(const QPoint& point, const QPoint& lineStart,
-                                        const QPoint& lineEnd)
-{
-  // Wektor od lineStart do lineEnd
-  float dx = lineEnd.x() - lineStart.x();
-  float dy = lineEnd.y() - lineStart.y();
-
-  // Jeśli segment ma zerową długość, zwróć odległość do punktu
-  float segmentLengthSquared = dx * dx + dy * dy;
-  if (segmentLengthSquared == 0.0f)
-  {
-    return Distance(point, lineStart);
-  }
-
-  // Parametr t określa gdzie projekcja punktu pada na linię (0 = start, 1 = end)
-  float t =
-      ((point.x() - lineStart.x()) * dx + (point.y() - lineStart.y()) * dy) / segmentLengthSquared;
-
-  // Ogranicz t do zakresu [0, 1] - projekcja musi być na segmencie
-  t = qBound(0.0f, t, 1.0f);
-
-  // Znajdź najbliższy punkt na segmencie
-  QPointF closestPoint(lineStart.x() + t * dx, lineStart.y() + t * dy);
-
-  // Oblicz odległość od punktu do najbliższego punktu na segmencie
-  float distX = point.x() - closestPoint.x();
-  float distY = point.y() - closestPoint.y();
-
-  return sqrt(distX * distX + distY * distY);
-}
-
-// Clamp point to image bounds
-inline QPoint ClampToImageBounds(const QPoint& point, const QSize& imageSize)
-{
-  int x = qBound(0, point.x(), imageSize.width() - 1);
-  int y = qBound(0, point.y(), imageSize.height() - 1);
+  int x = qBound(0, point.x(), image_size.width() - 1);
+  int y = qBound(0, point.y(), image_size.height() - 1);
   return QPoint(x, y);
 }
 
+}  // namespace
+
 PolygonCanvas::PolygonCanvas(QWidget* parent) : QLabel(parent)
 {
-  // Initialize with default color for first polygon
-  current_polygon_.class_id = 0;
-  current_polygon_.color = Qt::red;
-
-  // Enable keyboard focus to receive key events
   setFocusPolicy(Qt::StrongFocus);
+  setMouseTracking(true);
+}
+
+void PolygonCanvas::setPixmap(const QPixmap& pm)
+{
+  QLabel::setPixmap(pm);
+  edges_ = EdgeDetector::Result{};
+  spdlog::debug("[EdgeSnap] setPixmap called, size={}x{}, snap={}", pm.width(), pm.height(),
+               snap_to_edges_);
+  if (snap_to_edges_) ComputeEdges();
+}
+
+void PolygonCanvas::SetAnnotationSet(segcore::IAnnotationSet* set)
+{
+  annotation_set_ = set;
+}
+
+void PolygonCanvas::LoadArtifact(const segcore::Artifact& artifact)
+{
+  display_frame_ = segcore::NormaliseForDisplay(artifact);
+  QLabel::setPixmap(
+      QPixmap::fromImage(qt_adapter::FrameToQImage(display_frame_)));
+  edges_ = EdgeDetector::Result{};
+  if (snap_to_edges_) ComputeEdges();
+}
+
+void PolygonCanvas::SetClassColors(const QVector<QColor>& colors)
+{
+  class_colors_ = colors;
+}
+
+void PolygonCanvas::SetDrawingMode(int class_id)
+{
+  drawing_class_id_ = class_id;
+}
+
+void PolygonCanvas::SetSnapToEdges(bool enabled)
+{
+  snap_to_edges_ = enabled;
+  spdlog::debug("[EdgeSnap] SetSnapToEdges({}), pixmap null={}, edges valid={}", enabled,
+               pixmap().isNull(), edges_.isValid());
+  if (enabled && !edges_.isValid()) ComputeEdges();
+  repaint();
+}
+
+void PolygonCanvas::SetEdgeMapOnly(bool enabled)
+{
+  edge_map_only_ = enabled;
+  if (enabled && !edges_.isValid()) ComputeEdges();
+  repaint();
+}
+
+void PolygonCanvas::ComputeEdges()
+{
+  if (pixmap().isNull())
+  {
+    spdlog::debug("[EdgeSnap] ComputeEdges: pixmap is null, skipping");
+    return;
+  }
+  spdlog::debug("[EdgeSnap] ComputeEdges: detecting...");
+  edges_ = EdgeDetector::Detect(pixmap().toImage());
+  const long edge_count =
+      std::count(edges_.edge_map.begin(), edges_.edge_map.end(), uint8_t{1});
+  spdlog::debug("[EdgeSnap] ComputeEdges: found {} edge pixels ({}x{})", edge_count, edges_.width,
+               edges_.height);
+  repaint();
+}
+
+QPoint PolygonCanvas::ApplySnap(const QPoint& pos) const
+{
+  if (!snap_to_edges_) return pos;
+  const QPoint snapped = EdgeDetector::SnapToEdge(pos, edges_);
+  return snapped;
 }
 
 void PolygonCanvas::Increase()
 {
   scalar_ = scalar_ + 1.0f;
-
   QSize size = pixmap().size();
-  size.setWidth(static_cast<int>(size.width() * scalar_));
-  size.setHeight(static_cast<int>(size.height() * scalar_));
-  setFixedSize(size);
+  setFixedSize(static_cast<int>(size.width() * scalar_),
+               static_cast<int>(size.height() * scalar_));
 }
 
 void PolygonCanvas::Decrease()
 {
-  auto new_scalar_ = scalar_ - 1.0f;
-  if (new_scalar_ > 0)
-  {
-    scalar_ = new_scalar_;
-  }
-
+  float new_scalar = scalar_ - 1.0f;
+  if (new_scalar > 0.0f) scalar_ = new_scalar;
   QSize size = pixmap().size();
-  size.setWidth(static_cast<int>(size.width() * scalar_));
-  size.setHeight(static_cast<int>(size.height() * scalar_));
-  setFixedSize(size);
+  setFixedSize(static_cast<int>(size.width() * scalar_),
+               static_cast<int>(size.height() * scalar_));
 }
 
 void PolygonCanvas::ResetZoom()
 {
-  scalar_ = 1.0;
+  scalar_ = 1.0f;
   QSize size = pixmap().size();
-  size.setWidth(static_cast<int>(size.width() * scalar_));
-  size.setHeight(static_cast<int>(size.height() * scalar_));
-  setFixedSize(size);
-  std::cout << "Zoom reset to 100%" << std::endl;
+  setFixedSize(static_cast<int>(size.width() * scalar_),
+               static_cast<int>(size.height() * scalar_));
+  spdlog::info("Zoom reset to 100%");
 }
 
 void PolygonCanvas::StartNewPolygon(int class_id, QColor color)
 {
-  current_polygon_.class_id = class_id;
-  current_polygon_.color = color;
-  current_polygon_.points.clear();
-  current_polygon_.is_selected = false;
-  std::cout << "Started new polygon with class_id: " << class_id << std::endl;
+  if (class_id >= class_colors_.size())
+  {
+    class_colors_.resize(class_id + 1, Qt::red);
+  }
+  class_colors_[class_id] = color;
+  SetDrawingMode(class_id);
+  spdlog::info("Started new polygon with class_id: {}", class_id);
 }
 
 void PolygonCanvas::FinishCurrentPolygon()
 {
-  if (current_polygon_.points.size() >= 3)
+  if (annotation_set_ == nullptr) return;
+  const segcore::Segment* ip = annotation_set_->GetInProgress();
+  if (ip != nullptr && static_cast<int>(ip->points.size()) >= 3)
   {
-    SaveState();  // Save state before adding polygon
-    polygons_.push_back(current_polygon_);
-
-    // Keep class_id and color for next polygon, only clear points
-    int saved_class_id = current_polygon_.class_id;
-    QColor saved_color = current_polygon_.color;
-    current_polygon_.points.clear();
-    current_polygon_.class_id = saved_class_id;
-    current_polygon_.color = saved_color;
-    current_polygon_.is_selected = true;
-
-    emit PolygonsChanged();
-    current_polygon_.class_id = -1;  // Exit drawing mode
+    segcore::SegmentId committed_id = ip->id;
+    annotation_set_->CommitSegment(committed_id);
+    annotation_set_->SelectSegment(committed_id);
+    drawing_class_id_ = -1;
     emit CurrentClassChanged(-1);
+    emit PolygonsChanged();
     repaint();
-    std::cout << "Polygon finished and saved. Click to start next polygon or press Esc to stop."
-              << std::endl;
+    spdlog::info("Polygon finished and saved.");
   }
   else
   {
-    std::cout << "Cannot finish polygon: need at least 3 points" << std::endl;
+    spdlog::info("Cannot finish polygon: need at least 3 points");
   }
 }
 
 void PolygonCanvas::ClearCurrentPolygon()
 {
-  current_polygon_.points.clear();
-  current_polygon_.class_id = -1;  // Exit drawing mode
+  if (annotation_set_ == nullptr) return;
+  annotation_set_->CancelInProgress();
+  drawing_class_id_ = -1;
   emit CurrentClassChanged(-1);
   repaint();
-  std::cout << "Drawing cancelled" << std::endl;
+  spdlog::info("Drawing cancelled");
 }
 
 void PolygonCanvas::mouseMoveEvent(QMouseEvent* ev)
 {
-  auto pos = ev->pos() / scalar_;
-
-  // Clamp position to image bounds
+  cursor_pos_ = ev->pos() / scalar_;
   QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    pos = ClampToImageBounds(pos, pix.size());
-  }
-
-  active_point_pos_ = pos;
+  if (!pix.isNull()) cursor_pos_ = ClampToImageBounds(cursor_pos_, pix.size());
+  repaint();
 }
 
 void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
-
-  // Clamp position to image bounds
   QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    pos = ClampToImageBounds(pos, pix.size());
-  }
+  if (!pix.isNull()) pos = ClampToImageBounds(pos, pix.size());
 
-  // Check if editing current polygon being drawn
-  for (const auto& point : current_polygon_.points)
+  if (annotation_set_ == nullptr) return;
+
+  float tolerance = static_cast<float>(POINT_SELECT_TOLERANCE) / scalar_;
+
+  // Check in-progress segment for drag
+  const auto* ip = annotation_set_->GetInProgress();
+  if (ip != nullptr)
   {
-    if (IsPointNearPosition(point, pos, POINT_SELECT_TOLERANCE))
+    for (int i = 0; i < static_cast<int>(ip->points.size()); ++i)
     {
-      active_point_ = point;
-      active_point_pos_ = point;
-      return;
+      if (IsPointNearPosition(qt_adapter::ToQPoint(ip->points[i]), pos, tolerance))
+      {
+        drag_segment_id_ = ip->id;
+        drag_point_index_ = i;
+        return;
+      }
     }
   }
 
-  // Check if editing selected polygon
-  if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+  // Check selected segment for drag
+  auto sel_id = annotation_set_->GetSelectedSegmentId();
+  if (sel_id != segcore::kInvalidSegmentId)
   {
-    for (const auto& point : polygons_[selected_polygon_index_].points)
+    const auto* seg = annotation_set_->GetSegment(sel_id);
+    if (seg != nullptr)
     {
-      if (IsPointNearPosition(point, pos, POINT_SELECT_TOLERANCE))
+      for (int i = 0; i < static_cast<int>(seg->points.size()); ++i)
       {
-        active_point_ = point;
-        active_point_pos_ = point;
-        return;
+        if (IsPointNearPosition(qt_adapter::ToQPoint(seg->points[i]), pos, tolerance))
+        {
+          drag_segment_id_ = sel_id;
+          drag_point_index_ = i;
+          return;
+        }
       }
     }
   }
@@ -201,75 +227,89 @@ void PolygonCanvas::mousePressEvent(QMouseEvent* ev)
 void PolygonCanvas::mouseReleaseEvent(QMouseEvent* ev)
 {
   QPoint pos = ev->pos() / scalar_;
-
-  // Clamp position to image bounds
   QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    pos = ClampToImageBounds(pos, pix.size());
-  }
+  if (!pix.isNull()) pos = ClampToImageBounds(pos, pix.size());
+  pos = ApplySnap(pos);
 
-  // Right click finishes current polygon
-  if (ev->button() == Qt::RightButton)
-  {
-    if (!current_polygon_.points.isEmpty())
-    {
-      FinishCurrentPolygon();
-      return;
-    }
-  }
+  if (annotation_set_ == nullptr) return;
 
-  if (!active_point_.isNull())
+  // Handle drag end
+  if (drag_segment_id_ != segcore::kInvalidSegmentId)
   {
-    // Save state before modifying polygon
-    if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+    bool ctrl = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+    if (ctrl)
     {
-      SaveState();
-    }
-    HandlePointDrag(pos);
-  }
-  else
-  {
-    bool ctrl_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
-
-    // If we have a selected polygon and not pressing Ctrl, add point to end
-    if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() && !ctrl_pressed)
-    {
-      SaveState();
-      polygons_[selected_polygon_index_].points.push_back(pos);
-      emit PolygonsChanged();
-      repaint();
-      std::cout << "✓ Added point to selected polygon (total: "
-                << polygons_[selected_polygon_index_].points.size() << " points)" << std::endl;
-    }
-    // If Ctrl is pressed with selected polygon, insert point on edge
-    else if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size() &&
-             ctrl_pressed)
-    {
-      HandlePointInsertion(pos);
-    }
-    // If currently drawing, add point to current polygon
-    else if (!current_polygon_.points.isEmpty())
-    {
-      current_polygon_.points.push_back(pos);
-      repaint();
-    }
-    // If polygon mode is active (class_id set) but no points yet, add first point
-    else if (current_polygon_.class_id >= 0)
-    {
-      current_polygon_.points.push_back(pos);
-      std::cout << "Added first point to new polygon" << std::endl;
+      annotation_set_->RemovePoint(drag_segment_id_, drag_point_index_);
     }
     else
     {
-      // Not drawing and no active polygon - try to select a polygon
-      SelectPolygon(pos);
+      annotation_set_->MovePoint(drag_segment_id_, drag_point_index_,
+                                 qt_adapter::FromQPoint(pos));
     }
+    drag_segment_id_ = segcore::kInvalidSegmentId;
+    drag_point_index_ = -1;
+    emit PolygonsChanged();
+    repaint();
+    return;
   }
 
-  active_point_ = QPoint();
-  active_point_pos_ = QPoint();
-  repaint();
+  // Right click: commit in-progress if >= 3 points
+  if (ev->button() == Qt::RightButton)
+  {
+    const segcore::Segment* ip = annotation_set_->GetInProgress();
+    if (ip != nullptr && static_cast<int>(ip->points.size()) >= 3)
+    {
+      segcore::SegmentId committed_id = ip->id;
+      annotation_set_->CommitSegment(committed_id);
+      annotation_set_->SelectSegment(committed_id);
+      drawing_class_id_ = -1;
+      emit CurrentClassChanged(-1);
+      emit PolygonsChanged();
+      repaint();
+    }
+    return;
+  }
+
+  bool ctrl = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+
+  // Ctrl+Click on selected segment: insert point on nearest edge
+  if (ctrl)
+  {
+    auto sel_id = annotation_set_->GetSelectedSegmentId();
+    if (sel_id != segcore::kInvalidSegmentId)
+    {
+      const segcore::Segment* seg = annotation_set_->GetSegment(sel_id);
+      if (seg != nullptr && seg->points.size() >= 2)
+      {
+        int idx = segcore::InsertionIndex(*seg, qt_adapter::FromQPoint(pos));
+        annotation_set_->InsertPoint(sel_id, idx, qt_adapter::FromQPoint(pos));
+        emit PolygonsChanged();
+        repaint();
+      }
+    }
+    return;
+  }
+
+  // Drawing mode: add point to in-progress
+  if (drawing_class_id_ >= 0)
+  {
+    const segcore::Segment* ip = annotation_set_->GetInProgress();
+    segcore::SegmentId id;
+    if (ip == nullptr)
+    {
+      id = annotation_set_->BeginSegment(drawing_class_id_);
+    }
+    else
+    {
+      id = ip->id;
+    }
+    annotation_set_->AddPoint(id, qt_adapter::FromQPoint(pos));
+    repaint();
+    return;
+  }
+
+  // Not drawing: try to select a polygon
+  SelectPolygon(pos);
 }
 
 void PolygonCanvas::keyPressEvent(QKeyEvent* ev)
@@ -280,7 +320,7 @@ void PolygonCanvas::keyPressEvent(QKeyEvent* ev)
   }
   else if (ev->key() == Qt::Key_Escape)
   {
-    if (!current_polygon_.points.isEmpty())
+    if (annotation_set_ != nullptr && annotation_set_->GetInProgress() != nullptr)
     {
       ClearCurrentPolygon();
     }
@@ -293,19 +333,19 @@ void PolygonCanvas::keyPressEvent(QKeyEvent* ev)
   {
     DeleteSelectedPolygon();
   }
-  else if (ev->matches(QKeySequence::Undo))  // Ctrl+Z
+  else if (ev->matches(QKeySequence::Undo))
   {
     Undo();
   }
-  else if (ev->matches(QKeySequence::Redo))  // Ctrl+Y or Ctrl+Shift+Z
+  else if (ev->matches(QKeySequence::Redo))
   {
     Redo();
   }
-  else if (ev->matches(QKeySequence::Copy))  // Ctrl+C
+  else if (ev->matches(QKeySequence::Copy))
   {
     CopySelectedPolygon();
   }
-  else if (ev->matches(QKeySequence::Paste))  // Ctrl+V
+  else if (ev->matches(QKeySequence::Paste))
   {
     PastePolygon();
   }
@@ -318,610 +358,338 @@ void PolygonCanvas::keyPressEvent(QKeyEvent* ev)
 void PolygonCanvas::paintEvent(QPaintEvent*)
 {
   QPainter painter(this);
-
   DrawImage(painter);
-
-  // Draw all completed polygons
-  for (const auto& polygon : polygons_)
-  {
-    if (polygon.points.size() < 2)
-      continue;
-
-    // Visual feedback for selection
-    QColor drawColor = polygon.color;
-    int lineWidth = LINE_WIDTH;
-
-    if (polygon.is_selected)
-    {
-      lineWidth = 2;
-      drawColor = drawColor.lighter(120);  // Brighter color
-    }
-    else
-    {
-      drawColor.setAlpha(180);  // Semi-transparent for unselected
-    }
-
-    QPen pen(drawColor, lineWidth);
-    painter.setPen(pen);
-
-    // Draw points
-    for (const auto& point : polygon.points)
-    {
-      QPoint scaledPoint = point * scalar_;
-      painter.fillRect(scaledPoint.x() - POINT_DRAW_SIZE / 2, scaledPoint.y() - POINT_DRAW_SIZE / 2,
-                       POINT_DRAW_SIZE, POINT_DRAW_SIZE, drawColor);
-    }
-
-    // Draw segments
-    for (int i = 1; i < polygon.points.size(); ++i)
-    {
-      painter.drawLine(polygon.points[i - 1] * scalar_, polygon.points[i] * scalar_);
-    }
-
-    // Draw closing segment
-    painter.setPen(QPen(drawColor.darker(120), lineWidth));
-    painter.drawLine(polygon.points[0] * scalar_,
-                     polygon.points[polygon.points.size() - 1] * scalar_);
-  }
-
-  // Draw current polygon being edited
-  DrawPoints(painter);
-  DrawSegments(painter);
-  DrawClosingSegment(painter);
+  DrawEdgeOverlay(painter);
+  DrawCompletedSegments(painter);
+  DrawInProgressSegment(painter);
 }
 
 QSize PolygonCanvas::GetOriginalImageSize() const
 {
-  if (!pixmap().isNull())
-  {
-    return pixmap().size();
-  }
+  if (!pixmap().isNull()) return pixmap().size();
   return QSize(0, 0);
 }
 
-void PolygonCanvas::ExportAnnotations(const QString& filename, int class_id)
+void PolygonCanvas::ExportAnnotations(const QString& filename, int)
 {
-  (void)class_id;
-  QFile file(filename);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-  {
-    std::cerr << "Cannot open file for writing: " << filename.toStdString() << std::endl;
-    return;
-  }
-
-  QTextStream out(&file);
+  if (annotation_set_ == nullptr) return;
 
   QSize img_size = GetOriginalImageSize();
-  if (img_size.width() == 0 || img_size.height() == 0)
+  if (img_size.width() == 0 || img_size.height() == 0) return;
+
+  std::string text = segcore::SegmentsToNormalizedFormat(
+      annotation_set_->GetSegments(), img_size.width(), img_size.height());
+
+  QFile file(filename);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Text))
   {
-    std::cerr << "Invalid image size" << std::endl;
-    return;
+    file.write(QByteArray::fromStdString(text));
+  }
+  else
+  {
+    spdlog::error("Cannot open file for writing: {}", filename.toStdString());
   }
 
-  float img_width = static_cast<float>(img_size.width());
-  float img_height = static_cast<float>(img_size.height());
-
-  // Export all polygons
-  for (const auto& polygon : polygons_)
-  {
-    out << polygon.class_id;
-
-    for (const auto& point : polygon.points)
-    {
-      float normalized_x = qBound(0.0f, point.x() / img_width, 1.0f);
-      float normalized_y = qBound(0.0f, point.y() / img_height, 1.0f);
-      out << " " << normalized_x << " " << normalized_y;
-    }
-
-    out << "\n";
-  }
-
-  file.close();
-
-  std::cout << "Annotations exported to: " << filename.toStdString() << std::endl;
-  std::cout << "Polygons: " << polygons_.size() << std::endl;
+  spdlog::info("Annotations exported to: {}", filename.toStdString());
 }
 
 void PolygonCanvas::LoadAnnotations(const QString& filepath, const QVector<QColor>& class_colors)
 {
+  if (annotation_set_ == nullptr) return;
+
+  QSize img_size = GetOriginalImageSize();
+  if (img_size.width() == 0 || img_size.height() == 0) return;
+
   QFile file(filepath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
   {
-    std::cerr << "Cannot open file for reading: " << filepath.toStdString() << std::endl;
+    spdlog::error("Cannot open file for reading: {}", filepath.toStdString());
     return;
   }
 
-  QSize img_size = GetOriginalImageSize();
-  if (img_size.width() == 0 || img_size.height() == 0)
+  class_colors_ = class_colors;
+  annotation_set_->ClearAll();
+
+  std::string text = file.readAll().toStdString();
+  auto segments = segcore::NormalizedFormatToSegments(text, img_size.width(), img_size.height());
+
+  for (const auto& seg : segments)
   {
-    std::cerr << "Invalid image size" << std::endl;
-    return;
+    auto id = annotation_set_->BeginSegment(seg.class_id);
+    for (const auto& p : seg.points)
+    {
+      annotation_set_->AddPoint(id, p);
+    }
+    annotation_set_->CommitSegment(id);
   }
 
-  float img_width = static_cast<float>(img_size.width());
-  float img_height = static_cast<float>(img_size.height());
-
-  polygons_.clear();
-  QTextStream in(&file);
-
-  while (!in.atEnd())
-  {
-    QString line = in.readLine().trimmed();
-    if (line.isEmpty())
-    {
-      continue;
-    }
-
-    QStringList parts = line.split(' ', Qt::SkipEmptyParts);
-    if (parts.size() < 7)  // class_id + at least 3 points (6 coordinates)
-    {
-      std::cerr << "Invalid line: " << line.toStdString() << std::endl;
-      continue;
-    }
-
-    bool ok;
-    int class_id = parts[0].toInt(&ok);
-    if (!ok)
-    {
-      std::cerr << "Invalid class_id: " << parts[0].toStdString() << std::endl;
-      continue;
-    }
-
-    Polygon polygon;
-    polygon.class_id = class_id;
-    polygon.color = (class_id < class_colors.size()) ? class_colors[class_id] : Qt::red;
-    polygon.is_selected = false;
-
-    // Parse coordinate pairs
-    for (int i = 1; i < parts.size() - 1; i += 2)
-    {
-      float x_norm = parts[i].toFloat(&ok);
-      if (!ok)
-        continue;
-
-      float y_norm = parts[i + 1].toFloat(&ok);
-      if (!ok)
-        continue;
-
-      // Denormalize coordinates
-      int x_pixel = static_cast<int>(x_norm * img_width);
-      int y_pixel = static_cast<int>(y_norm * img_height);
-
-      polygon.points.append(QPoint(x_pixel, y_pixel));
-    }
-
-    if (polygon.points.size() >= 3)
-    {
-      polygons_.append(polygon);
-    }
-  }
-
-  file.close();
   update();
-
-  std::cout << "Loaded " << polygons_.size() << " polygons from: " << filepath.toStdString()
-            << std::endl;
+  spdlog::info("Loaded {} polygons from: {}", segments.size(), filepath.toStdString());
 }
 
 void PolygonCanvas::ClearAllPolygons()
 {
-  if (!polygons_.isEmpty())
-  {
-    SaveState();  // Save state before clearing
-  }
-  polygons_.clear();
-  current_polygon_.points.clear();
-  selected_polygon_index_ = -1;
+  if (annotation_set_ != nullptr) annotation_set_->ClearAll();
+  drawing_class_id_ = -1;
   emit PolygonsChanged();
   update();
 }
 
 void PolygonCanvas::AddPolygonFromPlugin(const QVector<QPoint>& points, int class_id,
-                                         const QColor& color)
+                                         const QColor&)
 {
-  if (points.size() < 3)
+  if (points.size() < 3 || annotation_set_ == nullptr) return;
+  auto id = annotation_set_->BeginSegment(class_id);
+  for (const auto& p : points)
   {
-    return;  // Invalid polygon
+    annotation_set_->AddPoint(id, qt_adapter::FromQPoint(p));
   }
-
-  Polygon polygon;
-  polygon.class_id = class_id;
-  polygon.points = points;
-  polygon.color = color;
-  polygon.is_selected = false;
-
-  polygons_.append(polygon);
+  annotation_set_->CommitSegment(id);
   emit PolygonsChanged();
-  update();
-
-  std::cout << "Added plugin polygon with " << points.size() << " points (class_id=" << class_id
-            << ")" << std::endl;
+  repaint();
+  spdlog::info("Added plugin polygon with {} points (class_id={})", points.size(), class_id);
 }
 
 void PolygonCanvas::SelectPolygon(const QPoint& pos)
 {
-  // Check from last to first (top to bottom in Z-order)
-  for (int i = polygons_.size() - 1; i >= 0; --i)
+  if (annotation_set_ == nullptr) return;
+  auto seg_id =
+      segcore::HitTestSegment(annotation_set_->GetSegments(), qt_adapter::FromQPoint(pos));
+  annotation_set_->DeselectAll();
+  if (seg_id != segcore::kInvalidSegmentId)
   {
-    const auto& polygon = polygons_[i];
-    if (polygon.points.size() < 3)
-      continue;
-
-    // Point-in-polygon algorithm (ray casting)
-    bool inside = false;
-    int j = polygon.points.size() - 1;
-
-    for (int k = 0; k < polygon.points.size(); ++k)
-    {
-      const QPoint& vi = polygon.points[k];
-      const QPoint& vj = polygon.points[j];
-
-      if (((vi.y() > pos.y()) != (vj.y() > pos.y())) &&
-          (pos.x() < (vj.x() - vi.x()) * (pos.y() - vi.y()) / (vj.y() - vi.y()) + vi.x()))
-      {
-        inside = !inside;
-      }
-      j = k;
-    }
-
-    if (inside)
-    {
-      // Deselect all first
-      for (auto& p : polygons_)
-      {
-        p.is_selected = false;
-      }
-
-      // Select this polygon
-      polygons_[i].is_selected = true;
-      selected_polygon_index_ = i;
-      update();
-      std::cout << "Selected polygon " << i << " (class_id=" << polygons_[i].class_id << ")"
-                << std::endl;
-      return;
-    }
+    annotation_set_->SelectSegment(seg_id);
+    spdlog::info("Selected segment {}", seg_id);
   }
-
-  // No polygon selected - deselect all
-  DeselectAll();
+  else
+  {
+    spdlog::info("Deselected all");
+  }
+  repaint();
 }
 
 void PolygonCanvas::DeselectAll()
 {
-  for (auto& polygon : polygons_)
-  {
-    polygon.is_selected = false;
-  }
-  selected_polygon_index_ = -1;
-  update();
-  std::cout << "Deselected all polygons" << std::endl;
+  if (annotation_set_ != nullptr) annotation_set_->DeselectAll();
+  repaint();
 }
 
 void PolygonCanvas::DeleteSelectedPolygon()
 {
-  if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+  if (annotation_set_ == nullptr) return;
+  auto sel_id = annotation_set_->GetSelectedSegmentId();
+  if (sel_id != segcore::kInvalidSegmentId)
   {
-    SaveState();  // Save state before deleting
-    std::cout << "Deleting polygon " << selected_polygon_index_ << std::endl;
-    polygons_.removeAt(selected_polygon_index_);
-    selected_polygon_index_ = -1;
+    annotation_set_->DeleteSegment(sel_id);
     emit PolygonsChanged();
     update();
   }
 }
 
-// Private helper methods
-
-bool PolygonCanvas::IsPointNearPosition(const QPoint& point, const QPoint& position,
-                                        int tolerance) const
+int PolygonCanvas::GetSelectedPolygonIndex() const
 {
-  return qAbs(point.x() - position.x()) <= tolerance && qAbs(point.y() - position.y()) <= tolerance;
+  if (annotation_set_ == nullptr) return -1;
+  return (annotation_set_->GetSelectedSegmentId() != segcore::kInvalidSegmentId) ? 0 : -1;
 }
 
-int PolygonCanvas::FindNearestSegmentIndex(const QPoint& position) const
+bool PolygonCanvas::HasAnnotations() const
 {
-  float min_distance = std::numeric_limits<float>::max();
-  int insert_index = -1;
-
-  for (int i = 0; i < current_polygon_.points.size(); ++i)
-  {
-    int next_i = (i + 1) % current_polygon_.points.size();
-    float distance = DistanceFromPointToSegment(position, current_polygon_.points[i],
-                                                current_polygon_.points[next_i]);
-
-    if (distance < min_distance)
-    {
-      min_distance = distance;
-      insert_index = next_i;
-    }
-  }
-
-  return insert_index;
+  return annotation_set_ != nullptr && !annotation_set_->GetSegments().empty();
 }
 
-void PolygonCanvas::HandlePointDrag(const QPoint& position)
+int PolygonCanvas::GetAnnotationCount() const
 {
-  QPoint clamped_pos = position;
-
-  // Clamp position to image bounds
-  QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    clamped_pos = ClampToImageBounds(position, pix.size());
-  }
-
-  // Try editing current polygon first
-  for (int i = 0; i < current_polygon_.points.size(); ++i)
-  {
-    if (current_polygon_.points[i] == active_point_)
-    {
-      if (QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
-      {
-        current_polygon_.points.removeAt(i);
-      }
-      else
-      {
-        current_polygon_.points[i] = position;
-      }
-      return;
-    }
-  }
-
-  // Try editing selected polygon
-  if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
-  {
-    auto& polygon = polygons_[selected_polygon_index_];
-    for (int i = 0; i < polygon.points.size(); ++i)
-    {
-      if (polygon.points[i] == active_point_)
-      {
-        if (QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
-        {
-          polygon.points.removeAt(i);
-          std::cout << "Removed point from selected polygon" << std::endl;
-        }
-        else
-        {
-          polygon.points[i] = position;
-        }
-        emit PolygonsChanged();
-        return;
-      }
-    }
-  }
-}
-
-void PolygonCanvas::HandlePointInsertion(const QPoint& position)
-{
-  QPoint clamped_pos = position;
-
-  // Clamp position to image bounds
-  QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    clamped_pos = ClampToImageBounds(position, pix.size());
-  }
-
-  bool ctrl_pressed = QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
-
-  // If Ctrl is pressed and we have a selected polygon, try to insert point
-  if (ctrl_pressed && selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
-  {
-    auto& polygon = polygons_[selected_polygon_index_];
-    if (polygon.points.size() > 1)
-    {
-      // Find nearest segment in selected polygon
-      float min_distance = std::numeric_limits<float>::max();
-      int insert_index = -1;
-
-      for (int i = 0; i < polygon.points.size(); ++i)
-      {
-        int next_i = (i + 1) % polygon.points.size();
-        float distance =
-            DistanceFromPointToSegment(clamped_pos, polygon.points[i], polygon.points[next_i]);
-
-        if (distance < min_distance)
-        {
-          min_distance = distance;
-          insert_index = next_i;
-        }
-      }
-
-      if (insert_index != -1 && min_distance < 10.0f)
-      {
-        SaveState();  // Save state before inserting point
-        polygon.points.insert(polygon.points.begin() + insert_index, clamped_pos);
-        emit PolygonsChanged();
-        repaint();
-        std::cout << "✓ Inserted point at index " << insert_index << std::endl;
-        return;
-      }
-      else
-      {
-        std::cout << "✗ Click closer to polygon edge to insert point (Ctrl+Click)" << std::endl;
-        return;
-      }
-    }
-  }
-
-  // Otherwise add to current polygon
-  if (ctrl_pressed && current_polygon_.points.size() > 1)
-  {
-    int insert_index = FindNearestSegmentIndex(clamped_pos);
-    if (insert_index != -1)
-    {
-      current_polygon_.points.insert(current_polygon_.points.begin() + insert_index, clamped_pos);
-      std::cout << "Inserted at index: " << insert_index << std::endl;
-    }
-  }
-  else
-  {
-    current_polygon_.points.push_back(clamped_pos);
-  }
-}
-
-void PolygonCanvas::DrawImage(QPainter& painter)
-{
-  QPixmap pix = pixmap();
-  if (!pix.isNull())
-  {
-    pix = pix.scaled(pix.width() * scalar_, pix.height() * scalar_);
-    painter.drawPixmap(0, 0, pix);
-  }
-}
-
-void PolygonCanvas::DrawPoints(QPainter& painter)
-{
-  QPen pen(current_polygon_.color, POINT_DRAW_SIZE);
-  painter.setPen(pen);
-
-  for (const auto& point : current_polygon_.points)
-  {
-    QPoint draw_pos = (!active_point_.isNull() && point == active_point_)
-                          ? active_point_pos_ * scalar_
-                          : point * scalar_;
-    painter.drawPoint(draw_pos);
-  }
-}
-
-void PolygonCanvas::DrawSegments(QPainter& painter)
-{
-  if (current_polygon_.points.size() < 2)
-    return;
-
-  QPen pen(current_polygon_.color, LINE_WIDTH);
-  painter.setPen(pen);
-
-  for (int i = 1; i < current_polygon_.points.size(); ++i)
-  {
-    QPoint prev = current_polygon_.points[i - 1];
-    QPoint curr = current_polygon_.points[i];
-
-    if (curr == active_point_)
-      curr = active_point_pos_;
-    if (prev == active_point_)
-      prev = active_point_pos_;
-
-    painter.drawLine(prev * scalar_, curr * scalar_);
-  }
-}
-
-void PolygonCanvas::DrawClosingSegment(QPainter& painter)
-{
-  if (current_polygon_.points.size() < 2)
-    return;
-
-  QPen pen(current_polygon_.color.darker(), LINE_WIDTH);
-  painter.setPen(pen);
-
-  QPoint first = current_polygon_.points[0];
-  QPoint last = current_polygon_.points[current_polygon_.points.size() - 1];
-
-  if (first == active_point_)
-    first = active_point_pos_;
-  if (last == active_point_)
-    last = active_point_pos_;
-
-  painter.drawLine(first * scalar_, last * scalar_);
-}
-
-// ============================================================================
-// Undo/Redo System
-// ============================================================================
-
-void PolygonCanvas::SaveState()
-{
-  // Save current state to undo stack
-  undo_stack_.push(polygons_);
-
-  // Limit stack size
-  if (undo_stack_.size() > MAX_UNDO_HISTORY)
-  {
-    undo_stack_.removeFirst();
-  }
-
-  // Clear redo stack when new action is performed
-  ClearRedoStack();
-}
-
-void PolygonCanvas::ClearRedoStack()
-{
-  redo_stack_.clear();
+  if (annotation_set_ == nullptr) return 0;
+  return static_cast<int>(annotation_set_->GetSegments().size());
 }
 
 void PolygonCanvas::Undo()
 {
-  if (undo_stack_.isEmpty())
-  {
-    return;
-  }
-
-  // Save current state to redo stack
-  redo_stack_.push(polygons_);
-
-  // Restore previous state
-  polygons_ = undo_stack_.pop();
-
-  // Clear selection
-  selected_polygon_index_ = -1;
-
+  if (annotation_set_ == nullptr) return;
+  annotation_set_->Undo();
   emit PolygonsChanged();
   repaint();
 }
 
 void PolygonCanvas::Redo()
 {
-  if (redo_stack_.isEmpty())
-  {
-    return;
-  }
-
-  // Save current state to undo stack
-  undo_stack_.push(polygons_);
-
-  // Restore next state
-  polygons_ = redo_stack_.pop();
-
-  // Clear selection
-  selected_polygon_index_ = -1;
-
+  if (annotation_set_ == nullptr) return;
+  annotation_set_->Redo();
   emit PolygonsChanged();
   repaint();
 }
 
-// ============================================================================
-// Copy/Paste System
-// ============================================================================
+bool PolygonCanvas::CanUndo() const
+{
+  return annotation_set_ != nullptr && annotation_set_->CanUndo();
+}
+
+bool PolygonCanvas::CanRedo() const
+{
+  return annotation_set_ != nullptr && annotation_set_->CanRedo();
+}
 
 void PolygonCanvas::CopySelectedPolygon()
 {
-  if (selected_polygon_index_ >= 0 && selected_polygon_index_ < polygons_.size())
+  if (annotation_set_ == nullptr) return;
+  auto sel_id = annotation_set_->GetSelectedSegmentId();
+  if (sel_id != segcore::kInvalidSegmentId)
   {
-    clipboard_polygon_ = polygons_[selected_polygon_index_];
-    std::cout << "Polygon copied to clipboard (" << clipboard_polygon_.points.size() << " points)"
-              << std::endl;
+    annotation_set_->CopySegment(sel_id);
   }
 }
 
 void PolygonCanvas::PastePolygon()
 {
-  if (clipboard_polygon_.points.isEmpty())
+  if (annotation_set_ == nullptr) return;
+  segcore::SegmentId pasted_id = annotation_set_->PasteSegment();
+  if (pasted_id != segcore::kInvalidSegmentId)
+    annotation_set_->SelectSegment(pasted_id);
+  emit PolygonsChanged();
+  repaint();
+}
+
+bool PolygonCanvas::HasClipboard() const
+{
+  return annotation_set_ != nullptr && annotation_set_->HasClipboard();
+}
+
+bool PolygonCanvas::IsPointNearPosition(const QPoint& point, const QPoint& position,
+                                        float tolerance) const
+{
+  float dx = static_cast<float>(point.x() - position.x());
+  float dy = static_cast<float>(point.y() - position.y());
+  return dx * dx + dy * dy <= tolerance * tolerance;
+}
+
+void PolygonCanvas::DrawImage(QPainter& painter)
+{
+  QPixmap pix = pixmap();
+  if (pix.isNull()) return;
+  if (edge_map_only_)
   {
-    std::cout << "Clipboard is empty" << std::endl;
+    painter.fillRect(0, 0, static_cast<int>(pix.width() * scalar_),
+                     static_cast<int>(pix.height() * scalar_), Qt::black);
+  }
+  else
+  {
+    pix = pix.scaled(static_cast<int>(pix.width() * scalar_),
+                     static_cast<int>(pix.height() * scalar_));
+    painter.drawPixmap(0, 0, pix);
+  }
+}
+
+void PolygonCanvas::DrawEdgeOverlay(QPainter& painter)
+{
+  if (edges_.overlay.isNull()) return;
+
+  if (edge_map_only_)
+  {
+    const int w = static_cast<int>(edges_.width * scalar_);
+    const int h = static_cast<int>(edges_.height * scalar_);
+    QImage bw(edges_.width, edges_.height, QImage::Format_RGB32);
+    bw.fill(Qt::black);
+    for (int y = 0; y < edges_.height; ++y)
+    {
+      QRgb* line = reinterpret_cast<QRgb*>(bw.scanLine(y));
+      for (int x = 0; x < edges_.width; ++x)
+      {
+        if (edges_.edge_map[static_cast<size_t>(y * edges_.width + x)])
+          line[x] = qRgb(255, 255, 255);
+      }
+    }
+    painter.drawImage(0, 0, bw.scaled(w, h, Qt::IgnoreAspectRatio, Qt::FastTransformation));
     return;
   }
 
-  // Save state for undo
-  SaveState();
+  if (!snap_to_edges_) return;
+  const QImage scaled = edges_.overlay.scaled(
+      static_cast<int>(edges_.overlay.width() * scalar_),
+      static_cast<int>(edges_.overlay.height() * scalar_),
+      Qt::IgnoreAspectRatio, Qt::FastTransformation);
+  painter.drawImage(0, 0, scaled);
+}
 
-  // Create new polygon from clipboard (exact copy, no offset)
-  Polygon new_polygon = clipboard_polygon_;
-  new_polygon.is_selected = false;
+void PolygonCanvas::DrawCompletedSegments(QPainter& painter)
+{
+  if (annotation_set_ == nullptr) return;
+  for (const auto& seg : annotation_set_->GetSegments())
+  {
+    if (seg.points.size() < 2) continue;
+    QColor color = class_colors_.value(seg.class_id, Qt::red);
+    int line_width = LINE_WIDTH;
+    if (seg.selected)
+    {
+      line_width = 2;
+      color = color.lighter(120);
+    }
+    else
+    {
+      color.setAlpha(180);
+    }
+    QPen pen(color, line_width);
+    painter.setPen(pen);
+    for (const auto& p : seg.points)
+    {
+      QPoint sp = qt_adapter::ToQPoint(p) * scalar_;
+      painter.fillRect(sp.x() - POINT_DRAW_SIZE / 2, sp.y() - POINT_DRAW_SIZE / 2,
+                       POINT_DRAW_SIZE, POINT_DRAW_SIZE, color);
+    }
+    for (int i = 1; i < static_cast<int>(seg.points.size()); ++i)
+    {
+      painter.drawLine(qt_adapter::ToQPoint(seg.points[static_cast<size_t>(i - 1)]) * scalar_,
+                       qt_adapter::ToQPoint(seg.points[static_cast<size_t>(i)]) * scalar_);
+    }
+    painter.setPen(QPen(color.darker(120), line_width));
+    painter.drawLine(qt_adapter::ToQPoint(seg.points.front()) * scalar_,
+                     qt_adapter::ToQPoint(seg.points.back()) * scalar_);
+  }
+}
 
-  polygons_.push_back(new_polygon);
+void PolygonCanvas::DrawInProgressSegment(QPainter& painter)
+{
+  if (annotation_set_ == nullptr) return;
+  const segcore::Segment* ip = annotation_set_->GetInProgress();
+  if (ip == nullptr) return;
 
-  std::cout << "Polygon pasted (" << new_polygon.points.size() << " points)" << std::endl;
+  QColor color = class_colors_.value(ip->class_id, Qt::red);
+  QPen pen(color, POINT_DRAW_SIZE);
+  painter.setPen(pen);
 
-  emit PolygonsChanged();
-  repaint();
+  for (int i = 0; i < static_cast<int>(ip->points.size()); ++i)
+  {
+    QPoint draw_pos =
+        (drag_segment_id_ == ip->id && drag_point_index_ == i)
+            ? cursor_pos_ * static_cast<int>(scalar_)
+            : qt_adapter::ToQPoint(ip->points[static_cast<size_t>(i)]) * scalar_;
+    painter.drawPoint(draw_pos);
+  }
+
+  if (ip->points.size() < 2) return;
+
+  painter.setPen(QPen(color, LINE_WIDTH));
+  for (int i = 1; i < static_cast<int>(ip->points.size()); ++i)
+  {
+    QPoint prev =
+        (drag_segment_id_ == ip->id && drag_point_index_ == i - 1)
+            ? cursor_pos_ * static_cast<int>(scalar_)
+            : qt_adapter::ToQPoint(ip->points[static_cast<size_t>(i - 1)]) * scalar_;
+    QPoint curr =
+        (drag_segment_id_ == ip->id && drag_point_index_ == i)
+            ? cursor_pos_ * static_cast<int>(scalar_)
+            : qt_adapter::ToQPoint(ip->points[static_cast<size_t>(i)]) * scalar_;
+    painter.drawLine(prev, curr);
+  }
+
+  painter.setPen(QPen(color.darker(), LINE_WIDTH));
+  QPoint first =
+      (drag_segment_id_ == ip->id && drag_point_index_ == 0)
+          ? cursor_pos_ * static_cast<int>(scalar_)
+          : qt_adapter::ToQPoint(ip->points.front()) * scalar_;
+  QPoint last_pt =
+      (drag_segment_id_ == ip->id &&
+       drag_point_index_ == static_cast<int>(ip->points.size()) - 1)
+          ? cursor_pos_ * static_cast<int>(scalar_)
+          : qt_adapter::ToQPoint(ip->points.back()) * scalar_;
+  painter.drawLine(first, last_pt);
 }

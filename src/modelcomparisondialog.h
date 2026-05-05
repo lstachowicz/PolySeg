@@ -4,6 +4,7 @@
 #include <QDialog>
 
 #include "projectconfig.h"
+#include <segcore/annotation_set.h>
 
 class PolygonCanvas;
 
@@ -42,6 +43,8 @@ class ModelComparisonDialog : public QDialog
   QString project_dir_;
   QStringList test_images_;
   int current_image_index_;
+  segcore::AnnotationSet annotation_set_a_;
+  segcore::AnnotationSet annotation_set_b_;
 };
 
 #endif  // MODELCOMPARISONDIALOG_H

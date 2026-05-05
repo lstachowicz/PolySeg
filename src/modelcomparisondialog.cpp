@@ -41,6 +41,9 @@ void ModelComparisonDialog::SetupUI()
     ui_->model_a_combo_->setCurrentIndex(0);
     ui_->model_b_combo_->setCurrentIndex(1);
   }
+
+  ui_->canvas_a_->SetAnnotationSet(&annotation_set_a_);
+  ui_->canvas_b_->SetAnnotationSet(&annotation_set_b_);
 }
 
 void ModelComparisonDialog::ConnectSignals()
@@ -166,8 +169,8 @@ void ModelComparisonDialog::RunComparison()
   RunDetectionOnModel(model_b_path, ui_->canvas_b_);
 
   // Update stats (placeholder for now)
-  int count_a = ui_->canvas_a_->GetPolygons().size();
-  int count_b = ui_->canvas_b_->GetPolygons().size();
+  int count_a = ui_->canvas_a_->GetAnnotationCount();
+  int count_b = ui_->canvas_b_->GetAnnotationCount();
 
   ui_->stats_a_->setText(QString("Detections: %1").arg(count_a));
   ui_->stats_b_->setText(QString("Detections: %1").arg(count_b));

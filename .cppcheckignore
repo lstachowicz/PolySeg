@@ -1,0 +1,8 @@
+# CMake files - not C++ code
+CMakeLists.txt
+*/CMakeLists.txt
+
+# External dependencies
+external/*
+build/*
+cmake/*

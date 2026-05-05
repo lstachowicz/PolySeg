@@ -33,6 +33,42 @@ All Qt libraries are dynamically linked (`.so` files on Linux, `.dll` on Windows
 
 ---
 
+## spdlog
+
+**License:** MIT License
+**Copyright:** Copyright (c) 2016 Gabi Melman and spdlog contributors.
+**Website:** https://github.com/gabime/spdlog
+**Version:** v1.15.3
+
+spdlog is statically compiled into this application. The MIT license requires
+that this copyright notice and license text be included with all distributions.
+
+### MIT License Full Text
+
+MIT License
+
+Copyright (c) 2016 Gabi Melman and spdlog contributors.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
 ## Standard C++ Library
 
 **License:** Part of the compiler toolchain (typically GPL with GCC Runtime Library Exception)  
@@ -85,4 +121,4 @@ Plugins are separate processes (subprocess communication) and do not affect Poly
 
 ---
 
-**Last Updated:** January 12, 2026
+**Last Updated:** May 5, 2026

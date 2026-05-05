@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="1">
+  <!-- Cppcheck configuration for PolySeg -->
+
+  <!-- Include paths for library resolution -->
+  <includedir>libs</includedir>
+  <includedir>src</includedir>
+
+  <!-- Exclude paths - prevent analysis of build/external files -->
+  <exclude>
+    <path name="external"/>
+    <path name="build"/>
+    <path name="cmake"/>
+    <path name="test123"/>
+    <path name="CMakeLists.txt"/>
+  </exclude>
+</project>

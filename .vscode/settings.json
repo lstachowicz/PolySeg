@@ -1,0 +1,35 @@
+{
+  // Cppcheck configuration
+  "cppcheck.enable": true,
+  "cppcheck.cppcheckPath": "cppcheck",
+  "cppcheck.standard": ["c++17"],
+  "cppcheck.language": "c++",
+  "cppcheck.includePaths": ["${workspaceFolder}/libs", "${workspaceFolder}/src"],
+  "cppcheck.excludedPaths": ["${workspaceFolder}/external", "${workspaceFolder}/build", "${workspaceFolder}/test123"],
+  "cppcheck.cppcheckArgs": ["--std=c++17", "--language=c++"],
+
+  // C/C++ IntelliSense settings
+  "C_Cpp.default.standard": "c++17",
+  "C_Cpp.default.includePath": ["${workspaceFolder}/libs", "${workspaceFolder}/src"],
+  "C_Cpp.formatting": "clangFormat",
+  "C_Cpp.clang_format_style": "file",
+
+  // Files to exclude from analysis
+  "files.exclude": {
+    "**/CMakeLists.txt": true,
+    "external/**": true,
+    "build/**": true,
+    "test123/**": true
+  },
+
+  // Editor settings
+  "editor.formatOnSave": true,
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnSave": true
+  },
+  "[h]": {
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnSave": true
+  }
+}
