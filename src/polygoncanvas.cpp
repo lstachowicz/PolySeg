@@ -7,9 +7,9 @@
 #include <QPainter>
 
 #include <algorithm>
-#include <iostream>
 
 #include "edgedetector.h"
+#include "logger.h"
 #include "qtadapter.h"
 #include <segcore/geometry.h>
 #include <segcore/normalized_format_serializer.h>
@@ -35,8 +35,8 @@ void PolygonCanvas::setPixmap(const QPixmap& pm)
 {
   QLabel::setPixmap(pm);
   edges_ = EdgeDetector::Result{};
-  std::cout << "[EdgeSnap] setPixmap called, size=" << pm.width() << "x" << pm.height()
-            << ", snap=" << snap_to_edges_ << std::endl;
+  spdlog::debug("[EdgeSnap] setPixmap called, size={}x{}, snap={}", pm.width(), pm.height(),
+               snap_to_edges_);
   if (snap_to_edges_) ComputeEdges();
 }
 
@@ -67,9 +67,8 @@ void PolygonCanvas::SetDrawingMode(int class_id)
 void PolygonCanvas::SetSnapToEdges(bool enabled)
 {
   snap_to_edges_ = enabled;
-  std::cout << "[EdgeSnap] SetSnapToEdges(" << enabled
-            << "), pixmap null=" << pixmap().isNull()
-            << ", edges valid=" << edges_.isValid() << std::endl;
+  spdlog::debug("[EdgeSnap] SetSnapToEdges({}), pixmap null={}, edges valid={}", enabled,
+               pixmap().isNull(), edges_.isValid());
   if (enabled && !edges_.isValid()) ComputeEdges();
   repaint();
 }
@@ -85,15 +84,15 @@ void PolygonCanvas::ComputeEdges()
 {
   if (pixmap().isNull())
   {
-    std::cout << "[EdgeSnap] ComputeEdges: pixmap is null, skipping" << std::endl;
+    spdlog::debug("[EdgeSnap] ComputeEdges: pixmap is null, skipping");
     return;
   }
-  std::cout << "[EdgeSnap] ComputeEdges: detecting..." << std::endl;
+  spdlog::debug("[EdgeSnap] ComputeEdges: detecting...");
   edges_ = EdgeDetector::Detect(pixmap().toImage());
   const long edge_count =
       std::count(edges_.edge_map.begin(), edges_.edge_map.end(), uint8_t{1});
-  std::cout << "[EdgeSnap] ComputeEdges: found " << edge_count << " edge pixels ("
-            << edges_.width << "x" << edges_.height << ")" << std::endl;
+  spdlog::debug("[EdgeSnap] ComputeEdges: found {} edge pixels ({}x{})", edge_count, edges_.width,
+               edges_.height);
   repaint();
 }
 
@@ -127,7 +126,7 @@ void PolygonCanvas::ResetZoom()
   QSize size = pixmap().size();
   setFixedSize(static_cast<int>(size.width() * scalar_),
                static_cast<int>(size.height() * scalar_));
-  std::cout << "Zoom reset to 100%" << std::endl;
+  spdlog::info("Zoom reset to 100%");
 }
 
 void PolygonCanvas::StartNewPolygon(int class_id, QColor color)
@@ -138,7 +137,7 @@ void PolygonCanvas::StartNewPolygon(int class_id, QColor color)
   }
   class_colors_[class_id] = color;
   SetDrawingMode(class_id);
-  std::cout << "Started new polygon with class_id: " << class_id << std::endl;
+  spdlog::info("Started new polygon with class_id: {}", class_id);
 }
 
 void PolygonCanvas::FinishCurrentPolygon()
@@ -154,11 +153,11 @@ void PolygonCanvas::FinishCurrentPolygon()
     emit CurrentClassChanged(-1);
     emit PolygonsChanged();
     repaint();
-    std::cout << "Polygon finished and saved." << std::endl;
+    spdlog::info("Polygon finished and saved.");
   }
   else
   {
-    std::cout << "Cannot finish polygon: need at least 3 points" << std::endl;
+    spdlog::info("Cannot finish polygon: need at least 3 points");
   }
 }
 
@@ -169,7 +168,7 @@ void PolygonCanvas::ClearCurrentPolygon()
   drawing_class_id_ = -1;
   emit CurrentClassChanged(-1);
   repaint();
-  std::cout << "Drawing cancelled" << std::endl;
+  spdlog::info("Drawing cancelled");
 }
 
 void PolygonCanvas::mouseMoveEvent(QMouseEvent* ev)
@@ -388,10 +387,10 @@ void PolygonCanvas::ExportAnnotations(const QString& filename, int)
   }
   else
   {
-    std::cerr << "Cannot open file for writing: " << filename.toStdString() << std::endl;
+    spdlog::error("Cannot open file for writing: {}", filename.toStdString());
   }
 
-  std::cout << "Annotations exported to: " << filename.toStdString() << std::endl;
+  spdlog::info("Annotations exported to: {}", filename.toStdString());
 }
 
 void PolygonCanvas::LoadAnnotations(const QString& filepath, const QVector<QColor>& class_colors)
@@ -404,7 +403,7 @@ void PolygonCanvas::LoadAnnotations(const QString& filepath, const QVector<QColo
   QFile file(filepath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
   {
-    std::cerr << "Cannot open file for reading: " << filepath.toStdString() << std::endl;
+    spdlog::error("Cannot open file for reading: {}", filepath.toStdString());
     return;
   }
 
@@ -425,8 +424,7 @@ void PolygonCanvas::LoadAnnotations(const QString& filepath, const QVector<QColo
   }
 
   update();
-  std::cout << "Loaded " << segments.size() << " polygons from: " << filepath.toStdString()
-            << std::endl;
+  spdlog::info("Loaded {} polygons from: {}", segments.size(), filepath.toStdString());
 }
 
 void PolygonCanvas::ClearAllPolygons()
@@ -449,8 +447,7 @@ void PolygonCanvas::AddPolygonFromPlugin(const QVector<QPoint>& points, int clas
   annotation_set_->CommitSegment(id);
   emit PolygonsChanged();
   repaint();
-  std::cout << "Added plugin polygon with " << points.size()
-            << " points (class_id=" << class_id << ")" << std::endl;
+  spdlog::info("Added plugin polygon with {} points (class_id={})", points.size(), class_id);
 }
 
 void PolygonCanvas::SelectPolygon(const QPoint& pos)
@@ -462,11 +459,11 @@ void PolygonCanvas::SelectPolygon(const QPoint& pos)
   if (seg_id != segcore::kInvalidSegmentId)
   {
     annotation_set_->SelectSegment(seg_id);
-    std::cout << "Selected segment " << seg_id << std::endl;
+    spdlog::info("Selected segment {}", seg_id);
   }
   else
   {
-    std::cout << "Deselected all" << std::endl;
+    spdlog::info("Deselected all");
   }
   repaint();
 }

@@ -36,9 +36,8 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
-#include <iostream>
-
 #include "aipluginmanager.h"
+#include "logger.h"
 #include "metadataimporter.h"
 #include "metadataimportsettingsdialog.h"
 #include "pluginwizard.h"
@@ -258,7 +257,7 @@ void MainWindow::Load()
 
   if (filename.isEmpty())
   {
-    std::cout << "Active image is not selected" << std::endl;
+    spdlog::info("Active image is not selected");
     return;
   }
 
@@ -596,22 +595,27 @@ void MainWindow::LoadImageAtIndex(int index)
 
   if (index < 0 || index >= image_list_.size())
   {
-    std::cerr << "Invalid image index: " << index << std::endl;
+    spdlog::error("Invalid image index: {}", index);
     return;
   }
 
   AutoSaveCurrentImage();
 
-  // Save clipboard from current image before switching
-  const segcore::Segment* clipboard_backup = nullptr;
+  // Save clipboard from current image before switching (deep copy)
+  std::optional<segcore::Segment> clipboard_backup;
   if (ui->label->GetAnnotationSet() != nullptr)
   {
     auto* current_set = dynamic_cast<segcore::AnnotationSet*>(ui->label->GetAnnotationSet());
     if (current_set != nullptr)
     {
-      clipboard_backup = current_set->GetClipboard();
+      if (const segcore::Segment* cb = current_set->GetClipboard(); cb != nullptr)
+      {
+        clipboard_backup = *cb;
+      }
     }
   }
+
+  segcore::ArtifactId previous_artifact_id = current_artifact_id_;
 
   current_image_index_ = index;
   QString imagePath = project_directory_ + "/images/" + image_list_[index];
@@ -634,13 +638,18 @@ void MainWindow::LoadImageAtIndex(int index)
   ui->label->SetAnnotationSet(&project_core_.GetAnnotations(current_artifact_id_));
 
   // Restore clipboard to new image
-  if (clipboard_backup != nullptr)
+  if (clipboard_backup.has_value())
   {
     auto* new_set = dynamic_cast<segcore::AnnotationSet*>(ui->label->GetAnnotationSet());
     if (new_set != nullptr)
     {
-      new_set->SetClipboard(clipboard_backup);
+      new_set->SetClipboard(&clipboard_backup.value());
     }
+  }
+
+  if (previous_artifact_id != segcore::kInvalidArtifactId)
+  {
+    project_core_.RemoveArtifact(previous_artifact_id);
   }
 
   ui->label->SetClassColors(BuildClassColorTable());
@@ -995,14 +1004,13 @@ void MainWindow::ScanProjectImages()
   int totalPolygons = 0;  // TODO: count from label files
   project_config_.UpdateStatistics(image_list_.size(), labeled, totalPolygons);
 
-  std::cout << "Found " << image_list_.size() << " images, " << labeled << " labeled" << std::endl;
+  spdlog::info("Found {} images, {} labeled", image_list_.size(), labeled);
 
   // Show split statistics if enabled
   if (project_config_.IsSplitEnabled())
   {
-    std::cout << "Split counts - Train: " << project_config_.GetTrainCount()
-              << " Val: " << project_config_.GetValCount()
-              << " Test: " << project_config_.GetTestCount() << std::endl;
+    spdlog::info("Split counts - Train: {} Val: {} Test: {}", project_config_.GetTrainCount(),
+                 project_config_.GetValCount(), project_config_.GetTestCount());
   }
 
   // Update AI plugin manager with project info
@@ -1868,11 +1876,11 @@ void MainWindow::LoadLastProject()
   
   if (lastProject.isEmpty() || !QFile::exists(lastProject))
   {
-    std::cout << "No last project to load" << std::endl;
+    spdlog::info("No last project to load");
     return;
   }
   
-  std::cout << "Loading last project: " << lastProject.toStdString() << std::endl;
+  spdlog::info("Loading last project: {}", lastProject.toStdString());
   
   QFileInfo fileInfo(lastProject);
   QString projectDir = fileInfo.dir().path();
@@ -1900,12 +1908,12 @@ void MainWindow::LoadLastProject()
       LoadImageAtIndex(0);
     }
     
-    std::cout << "Loaded last project: " << project_config_.GetProjectName().toStdString() 
-              << " with " << image_list_.size() << " images" << std::endl;
+    spdlog::info("Loaded last project: {} with {} images",
+                 project_config_.GetProjectName().toStdString(), image_list_.size());
   }
   else
   {
-    std::cout << "Failed to load last project" << std::endl;
+    spdlog::info("Failed to load last project");
   }
 }
 

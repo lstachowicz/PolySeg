@@ -49,16 +49,23 @@ std::vector<Segment> NormalizedFormatToSegments(const std::string& text, int w, 
     {
       continue;
     }
-    Segment seg;
-    seg.id = next_id++;
-    seg.class_id = std::stoi(tokens[0]);
-    for (size_t i = 1; i + 1 < tokens.size(); i += 2)
+    try
     {
-      double nx = std::stod(tokens[i]);
-      double ny = std::stod(tokens[i + 1]);
-      seg.points.push_back({static_cast<int>(nx * w), static_cast<int>(ny * h)});
+      Segment seg;
+      seg.id = next_id++;
+      seg.class_id = std::stoi(tokens[0]);
+      for (size_t i = 1; i + 1 < tokens.size(); i += 2)
+      {
+        double nx = std::stod(tokens[i]);
+        double ny = std::stod(tokens[i + 1]);
+        seg.points.push_back({static_cast<int>(nx * w), static_cast<int>(ny * h)});
+      }
+      result.push_back(std::move(seg));
     }
-    result.push_back(std::move(seg));
+    catch (const std::exception&)
+    {
+      continue;
+    }
   }
   return result;
 }

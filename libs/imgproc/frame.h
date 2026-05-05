@@ -14,15 +14,18 @@ class Frame
  public:
   Frame() : width_(0), height_(0) {}
 
-  Frame(uint16_t width, uint16_t height) : width_(width), height_(height), data_(width * height) {}
+  Frame(uint16_t width, uint16_t height)
+      : width_(width), height_(height), data_(static_cast<size_t>(width) * height)
+  {
+  }
 
   Frame(uint16_t width, uint16_t height, const T* data)
-      : width_(width), height_(height), data_(data, data + width * height)
+      : width_(width), height_(height), data_(data, data + static_cast<size_t>(width) * height)
   {
   }
 
   Frame(uint16_t width, uint16_t height, T fill)
-      : width_(width), height_(height), data_(width * height, fill)
+      : width_(width), height_(height), data_(static_cast<size_t>(width) * height, fill)
   {
   }
 

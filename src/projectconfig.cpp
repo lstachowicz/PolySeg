@@ -7,7 +7,7 @@
 #include <QJsonDocument>
 #include <QUuid>
 
-#include <iostream>
+#include "logger.h"
 
 PluginConfig::PluginConfig()
     : enabled(false),
@@ -267,7 +267,7 @@ bool ProjectConfig::LoadFromFile(const QString& filepath)
   QFile file(filepath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
   {
-    std::cerr << "Failed to open project file: " << filepath.toStdString() << std::endl;
+    spdlog::error("Failed to open project file: {}", filepath.toStdString());
     return false;
   }
 
@@ -277,7 +277,7 @@ bool ProjectConfig::LoadFromFile(const QString& filepath)
   QJsonDocument doc = QJsonDocument::fromJson(data);
   if (doc.isNull() || !doc.isObject())
   {
-    std::cerr << "Invalid JSON in project file" << std::endl;
+    spdlog::error("Invalid JSON in project file");
     return false;
   }
 
@@ -290,7 +290,7 @@ bool ProjectConfig::SaveToFile(const QString& filepath)
   QFile file(filepath);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
   {
-    std::cerr << "Failed to save project file: " << filepath.toStdString() << std::endl;
+    spdlog::error("Failed to save project file: {}", filepath.toStdString());
     return false;
   }
 
@@ -298,7 +298,7 @@ bool ProjectConfig::SaveToFile(const QString& filepath)
   file.write(doc.toJson(QJsonDocument::Indented));
   file.close();
 
-  std::cout << "Project saved to: " << filepath.toStdString() << std::endl;
+  spdlog::info("Project saved to: {}", filepath.toStdString());
   return true;
 }
 
@@ -311,8 +311,8 @@ void ProjectConfig::AddClass(const QString& name, const QColor& color, int index
   pc.index = (index >= 0) ? index : classes_.size();
   classes_.push_back(pc);
 
-  std::cout << "Added class: " << name.toStdString() << " (id=" << pc.id << ", index=" << pc.index
-            << ", color=" << color.name().toStdString() << ")" << std::endl;
+  spdlog::info("Added class: {} (id={}, index={}, color={})", name.toStdString(), pc.id, pc.index,
+               color.name().toStdString());
 }
 
 void ProjectConfig::RemoveClass(int class_id)
@@ -321,7 +321,7 @@ void ProjectConfig::RemoveClass(int class_id)
   {
     if (classes_[i].id == class_id)
     {
-      std::cout << "Removed class: " << classes_[i].name.toStdString() << std::endl;
+      spdlog::info("Removed class: {}", classes_[i].name.toStdString());
       classes_.removeAt(i);
       return;
     }
@@ -340,7 +340,7 @@ void ProjectConfig::UpdateClass(int class_id, const QString& name, const QColor&
       {
         pc.index = index;
       }
-      std::cout << "Updated class id=" << class_id << " to: " << name.toStdString() << std::endl;
+      spdlog::info("Updated class id={} to: {}", class_id, name.toStdString());
       return;
     }
   }
@@ -451,7 +451,7 @@ QJsonObject ProjectConfig::ToJson() const
   }
   obj["model_versions"] = models_array;
   
-  std::cout << "ToJson: Serializing " << model_versions_.size() << " model versions" << std::endl;
+  spdlog::info("ToJson: Serializing {} model versions", model_versions_.size());
 
   return obj;
 }
@@ -484,8 +484,8 @@ void ProjectConfig::FromJson(const QJsonObject& json)
   if (json.contains("plugin"))
   {
     plugin_config_ = PluginConfig::FromJson(json["plugin"].toObject());
-    std::cout << "Plugin loaded: " << plugin_config_.name.toStdString()
-              << " (enabled=" << (plugin_config_.enabled ? "yes" : "no") << ")" << std::endl;
+    spdlog::info("Plugin loaded: {} (enabled={})", plugin_config_.name.toStdString(),
+                 plugin_config_.enabled ? "yes" : "no");
   }
 
   // Load statistics
@@ -528,10 +528,9 @@ void ProjectConfig::FromJson(const QJsonObject& json)
     model_versions_.append(ModelVersion::FromJson(model_val.toObject()));
   }
   
-  std::cout << "FromJson: Loaded " << model_versions_.size() << " model versions" << std::endl;
-
-  std::cout << "Loaded project: " << project_name_.toStdString() << " with " << classes_.size()
-            << " classes" << std::endl;
+  spdlog::info("FromJson: Loaded {} model versions", model_versions_.size());
+  spdlog::info("Loaded project: {} with {} classes", project_name_.toStdString(),
+               classes_.size());
 }
 
 // Train/Val/Test Split Management Implementation
@@ -603,15 +602,15 @@ void ProjectConfig::UpdateImageSplits(const QStringList& all_images)
     // Existing images keep their split assignment
   }
 
-  std::cout << "Updated splits: Train=" << GetTrainCount() << " Val=" << GetValCount()
-            << " Test=" << GetTestCount() << std::endl;
+  spdlog::info("Updated splits: Train={} Val={} Test={}", GetTrainCount(), GetValCount(),
+               GetTestCount());
 }
 
 void ProjectConfig::GenerateSplitFiles(const QString& project_dir)
 {
   if (!split_config_.enabled)
   {
-    std::cerr << "Splits not enabled" << std::endl;
+    spdlog::error("Splits not enabled");
     return;
   }
 
@@ -656,7 +655,7 @@ void ProjectConfig::GenerateSplitFiles(const QString& project_dir)
       train_file.write((img + "\n").toUtf8());
     }
     train_file.close();
-    std::cout << "Generated train.txt with " << train_images.size() << " images" << std::endl;
+    spdlog::info("Generated train.txt with {} images", train_images.size());
   }
 
   // Write val.txt
@@ -668,7 +667,7 @@ void ProjectConfig::GenerateSplitFiles(const QString& project_dir)
       val_file.write((img + "\n").toUtf8());
     }
     val_file.close();
-    std::cout << "Generated val.txt with " << val_images.size() << " images" << std::endl;
+    spdlog::info("Generated val.txt with {} images", val_images.size());
   }
 
   // Write test.txt
@@ -680,7 +679,7 @@ void ProjectConfig::GenerateSplitFiles(const QString& project_dir)
       test_file.write((img + "\n").toUtf8());
     }
     test_file.close();
-    std::cout << "Generated test.txt with " << test_images.size() << " images" << std::endl;
+    spdlog::info("Generated test.txt with {} images", test_images.size());
   }
 }
 
@@ -722,9 +721,9 @@ int ProjectConfig::GetTestCount() const
 void ProjectConfig::AddModelVersion(const ModelVersion& model)
 {
   model_versions_.append(model);
-  std::cout << "Added model version: " << model.name.toStdString() 
-            << " (path=" << model.path.toStdString() << ")" << std::endl;
-  std::cout << "Total models in config: " << model_versions_.size() << std::endl;
+  spdlog::info("Added model version: {} (path={})", model.name.toStdString(),
+               model.path.toStdString());
+  spdlog::info("Total models in config: {}", model_versions_.size());
 }
 
 void ProjectConfig::RemoveModelVersion(int index)

@@ -12,8 +12,7 @@
 #include <QStatusBar>
 #include <QTextStream>
 
-#include <iostream>
-
+#include "logger.h"
 #include "modelregistrationdialog.h"
 #include "polygoncanvas.h"
 #include "projectconfig.h"
@@ -118,7 +117,7 @@ void AIPluginManager::ExecutePluginCommand(const QString& command, const QString
   if (!project_directory_.isEmpty())
   {
     process.setWorkingDirectory(project_directory_);
-    std::cout << "Working directory: " << project_directory_.toStdString() << std::endl;
+    spdlog::info("Working directory: {}", project_directory_.toStdString());
   }
 
   QString full_command = command;
@@ -137,17 +136,16 @@ void AIPluginManager::ExecutePluginCommand(const QString& command, const QString
     full_command = "bash";
     full_args = QStringList() << "-c" << shell_command;
 
-    std::cout << "Executing with env setup: bash -c \"" << shell_command.toStdString() << "\""
-              << std::endl;
+    spdlog::info("Executing with env setup: bash -c \"{}\"", shell_command.toStdString());
   }
   else
   {
-    std::cout << "Executing: " << command.toStdString();
+    QString cmd_str = command;
     for (const QString& arg : args)
     {
-      std::cout << " " << arg.toStdString();
+      cmd_str += " " + arg;
     }
-    std::cout << std::endl;
+    spdlog::info("Executing: {}", cmd_str.toStdString());
   }
 
   process.start(full_command, full_args);
@@ -170,8 +168,8 @@ void AIPluginManager::ExecutePluginCommand(const QString& command, const QString
   QString output = process.readAll();
   int exitCode = process.exitCode();
 
-  std::cout << "Plugin exit code: " << exitCode << std::endl;
-  std::cout << "Plugin output:\n" << output.toStdString() << std::endl;
+  spdlog::info("Plugin exit code: {}", exitCode);
+  spdlog::info("Plugin output:\n{}", output.toStdString());
 
   if (exitCode != 0)
   {
@@ -275,9 +273,8 @@ void AIPluginManager::ParseDetectionResults(const QString& json_output)
         class_id = classes[external_class_id].id;
         class_color = classes[external_class_id].color;
         resolved_class_name = classes[external_class_id].name;
-        std::cout << "Mapped external class_id " << external_class_id
-                  << " to project class: " << classes[external_class_id].name.toStdString()
-                  << std::endl;
+        spdlog::info("Mapped external class_id {} to project class: {}", external_class_id,
+                   classes[external_class_id].name.toStdString());
       }
     }
 
@@ -298,7 +295,7 @@ void AIPluginManager::ParseDetectionResults(const QString& json_output)
       class_color = color;
       resolved_class_name = new_class_name;
       emit ClassesUpdated();
-      std::cout << "Auto-created class: " << new_class_name.toStdString() << std::endl;
+      spdlog::info("Auto-created class: {}", new_class_name.toStdString());
     }
 
     // Convert normalized coordinates to pixel coordinates
@@ -463,7 +460,7 @@ void AIPluginManager::RunTrainModel()
     {
       if (QFile::remove(cache_file))
       {
-        std::cout << "Removed old cache: " << cache_file.toStdString() << std::endl;
+        spdlog::info("Removed old cache: {}", cache_file.toStdString());
       }
     }
   }
@@ -492,7 +489,7 @@ void AIPluginManager::RunTrainModel()
     out << "nc: " << classes.size() << "\n";
 
     data_yaml.close();
-    std::cout << "Generated data.yaml with " << classes.size() << " classes" << std::endl;
+    spdlog::info("Generated data.yaml with {} classes", classes.size());
   }
   else
   {
@@ -568,8 +565,8 @@ void AIPluginManager::RunTrainModel()
 
   // Set working directory to project directory
   training_process_->setWorkingDirectory(project_directory_);
-  std::cout << "Training working directory: " << project_directory_.toStdString() << std::endl;
-  std::cout << "Training logs: " << log_file_path.toStdString() << std::endl;
+  spdlog::info("Training working directory: {}", project_directory_.toStdString());
+  spdlog::info("Training logs: {}", log_file_path.toStdString());
 
   // Open log files for writing
   QFile* log_file = new QFile(log_file_path, training_process_);
@@ -577,14 +574,14 @@ void AIPluginManager::RunTrainModel()
 
   if (!log_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
   {
-    std::cerr << "Warning: Could not open log file for writing" << std::endl;
+    spdlog::warn("Could not open log file for writing");
     delete log_file;
     log_file = nullptr;
   }
 
   if (!err_file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append))
   {
-    std::cerr << "Warning: Could not open error log file for writing" << std::endl;
+    spdlog::warn("Could not open error log file for writing");
     delete err_file;
     err_file = nullptr;
   }
@@ -592,7 +589,7 @@ void AIPluginManager::RunTrainModel()
   // Connect to read output in real-time and write to both terminal and log file
   connect(training_process_, &QProcess::readyReadStandardOutput, this, [this, log_file]() {
     QString output = training_process_->readAllStandardOutput();
-    std::cout << output.toStdString() << std::flush;
+    spdlog::info("{}", output.toStdString());
 
     if (log_file && log_file->isOpen())
     {
@@ -603,7 +600,7 @@ void AIPluginManager::RunTrainModel()
 
   connect(training_process_, &QProcess::readyReadStandardError, this, [this, err_file]() {
     QString error_output = training_process_->readAllStandardError();
-    std::cerr << error_output.toStdString() << std::flush;
+    spdlog::error("{}", error_output.toStdString());
 
     if (err_file && err_file->isOpen())
     {
@@ -627,21 +624,20 @@ void AIPluginManager::RunTrainModel()
 
             if (exitStatus == QProcess::NormalExit && exitCode == 0)
             {
-              std::cout << "\n=== Training completed successfully ===\n" << std::endl;
+              spdlog::info("=== Training completed successfully ===");
               // Training succeeded - prompt for model registration
               PromptModelRegistration();
               emit TrainingComplete(true);
             }
             else if (exitStatus == QProcess::CrashExit)
             {
-              std::cerr << "\n=== Training process crashed ===\n" << std::endl;
+              spdlog::error("=== Training process crashed ===");
               QMessageBox::critical(nullptr, "Training Failed", "Training process crashed.");
               emit TrainingComplete(false);
             }
             else
             {
-              std::cerr << "\n=== Training failed with exit code " << exitCode << " ===\n"
-                        << std::endl;
+              spdlog::error("=== Training failed with exit code {} ===", exitCode);
               QMessageBox::critical(
                   nullptr, "Training Failed",
                   QString("Training exited with error code %1\n\nCheck terminal for details.")
@@ -670,17 +666,17 @@ void AIPluginManager::RunTrainModel()
     full_command = "bash";
     full_args = QStringList() << "-c" << shell_command;
 
-    std::cout << "Executing training with env setup: bash -c \"" << shell_command.toStdString()
-              << "\"" << std::endl;
+    spdlog::info("Executing training with env setup: bash -c \"{}\"",
+                 shell_command.toStdString());
   }
   else
   {
-    std::cout << "Executing: " << plugin.command.toStdString();
+    QString cmd_str = plugin.command;
     for (const QString& arg : args)
     {
-      std::cout << " " << arg.toStdString();
+      cmd_str += " " + arg;
     }
-    std::cout << std::endl;
+    spdlog::info("Executing: {}", cmd_str.toStdString());
   }
 
   training_process_->start(full_command, full_args);
@@ -694,7 +690,7 @@ void AIPluginManager::RunTrainModel()
     return;
   }
 
-  std::cout << "\n=== Training started ===\n" << std::endl;
+  spdlog::info("=== Training started ===");
 }
 
 void AIPluginManager::RunBatchDetect()
@@ -751,7 +747,7 @@ void AIPluginManager::RunBatchDetect()
     if (HasApprovedFile(image_path))
     {
       skipped++;
-      std::cout << "Skipping (already approved): " << image_file.toStdString() << std::endl;
+      spdlog::info("Skipping (already approved): {}", image_file.toStdString());
       continue;
     }
 
@@ -828,7 +824,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   QProcess process;
   process.setProcessChannelMode(QProcess::MergedChannels);
 
-  std::cout << "Batch detect: " << image_path.toStdString() << std::endl;
+  spdlog::info("Batch detect: {}", image_path.toStdString());
 
   QString full_command = plugin.command;
   QStringList full_args = args;
@@ -851,13 +847,13 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
 
   if (!process.waitForStarted())
   {
-    std::cerr << "Failed to start plugin for: " << image_path.toStdString() << std::endl;
+    spdlog::error("Failed to start plugin for: {}", image_path.toStdString());
     return;
   }
 
   if (!process.waitForFinished(30000))
   {
-    std::cerr << "Plugin timeout for: " << image_path.toStdString() << std::endl;
+    spdlog::warn("Plugin timeout for: {}", image_path.toStdString());
     process.kill();
     return;
   }
@@ -867,8 +863,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
 
   if (exitCode != 0)
   {
-    std::cerr << "Plugin error for: " << image_path.toStdString() << " (exit code: " << exitCode
-              << ")" << std::endl;
+    spdlog::error("Plugin error for: {} (exit code: {})", image_path.toStdString(), exitCode);
     return;
   }
 
@@ -888,7 +883,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
 
   if (doc.isNull() || !doc.isObject())
   {
-    std::cerr << "Invalid JSON from plugin for: " << image_path.toStdString() << std::endl;
+    spdlog::error("Invalid JSON from plugin for: {}", image_path.toStdString());
     return;
   }
 
@@ -898,14 +893,14 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   if (root.contains("success") && !root["success"].toBool())
   {
     QString error_msg = root.contains("error") ? root["error"].toString() : "Unknown error";
-    std::cerr << "Plugin error for " << image_path.toStdString() << ": "
-              << error_msg.toStdString() << std::endl;
+    spdlog::error("Plugin error for {}: {}", image_path.toStdString(),
+                  error_msg.toStdString());
     return;
   }
 
   if (!root.contains("detections") || !root["detections"].isArray())
   {
-    std::cerr << "Missing detections array for: " << image_path.toStdString() << std::endl;
+    spdlog::error("Missing detections array for: {}", image_path.toStdString());
     return;
   }
 
@@ -913,7 +908,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
 
   if (detections.isEmpty())
   {
-    std::cout << "No detections for: " << image_path.toStdString() << std::endl;
+    spdlog::info("No detections for: {}", image_path.toStdString());
     return;
   }
 
@@ -924,7 +919,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   QFile meta_file(meta_path);
   if (!meta_file.open(QIODevice::WriteOnly | QIODevice::Text))
   {
-    std::cerr << "Failed to create meta file: " << meta_path.toStdString() << std::endl;
+    spdlog::error("Failed to create meta file: {}", meta_path.toStdString());
     return;
   }
 
@@ -934,7 +929,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   QPixmap pixmap(image_path);
   if (pixmap.isNull())
   {
-    std::cerr << "Failed to load image: " << image_path.toStdString() << std::endl;
+    spdlog::error("Failed to load image: {}", image_path.toStdString());
     return;
   }
 
@@ -1011,8 +1006,7 @@ void AIPluginManager::BatchDetectOnImage(const QString& image_path)
   }
 
   meta_file.close();
-  std::cout << "Saved " << detections.size() << " detections to: " << meta_path.toStdString()
-            << std::endl;
+  spdlog::info("Saved {} detections to: {}", detections.size(), meta_path.toStdString());
 }
 
 void AIPluginManager::SaveToMetaFile(const QString& image_path)
@@ -1022,7 +1016,7 @@ void AIPluginManager::SaveToMetaFile(const QString& image_path)
 
   // Use existing ExportAnnotations logic but to .meta file
   canvas_->ExportAnnotations(meta_path, 0);
-  std::cout << "Saved to meta file: " << meta_path.toStdString() << std::endl;
+  spdlog::info("Saved to meta file: {}", meta_path.toStdString());
 }
 
 void AIPluginManager::LoadFromMetaFile(const QString& image_path)
@@ -1044,7 +1038,7 @@ void AIPluginManager::LoadFromMetaFile(const QString& image_path)
 
   // Load from .meta file
   canvas_->LoadAnnotations(meta_path, class_colors);
-  std::cout << "Loaded from meta file: " << meta_path.toStdString() << std::endl;
+  spdlog::info("Loaded from meta file: {}", meta_path.toStdString());
 }
 
 bool AIPluginManager::HasMetaFile(const QString& image_path) const
@@ -1081,11 +1075,11 @@ void AIPluginManager::PromoteMetaToApproved(const QString& image_path)
   // Rename .meta -> .txt (promote to approved)
   if (QFile::rename(meta_path, label_path))
   {
-    std::cout << "Approved: " << fileInfo.baseName().toStdString() << std::endl;
+    spdlog::info("Approved: {}", fileInfo.baseName().toStdString());
   }
   else
   {
-    std::cerr << "Failed to approve: " << fileInfo.baseName().toStdString() << std::endl;
+    spdlog::error("Failed to approve: {}", fileInfo.baseName().toStdString());
   }
 }
 
@@ -1097,7 +1091,7 @@ void AIPluginManager::DeleteMetaFile(const QString& image_path)
   if (QFile::exists(meta_path))
   {
     QFile::remove(meta_path);
-    std::cout << "Rejected meta file: " << fileInfo.baseName().toStdString() << std::endl;
+    spdlog::info("Rejected meta file: {}", fileInfo.baseName().toStdString());
   }
 }
 
@@ -1160,11 +1154,11 @@ void AIPluginManager::PromptModelRegistration()
 
     if (!trained_model_path.isEmpty())
     {
-      std::cout << "Found trained model: " << trained_model_path.toStdString() << std::endl;
+      spdlog::info("Found trained model: {}", trained_model_path.toStdString());
     }
     else
     {
-      std::cout << "No best.pt found in: " << runs_dir.toStdString() << std::endl;
+      spdlog::info("No best.pt found in: {}", runs_dir.toStdString());
     }
   }
 
@@ -1183,11 +1177,11 @@ void AIPluginManager::PromptModelRegistration()
     // Copy new model
     if (QFile::copy(trained_model_path, dest_path))
     {
-      std::cout << "Copied model to: " << dest_path.toStdString() << std::endl;
+      spdlog::info("Copied model to: {}", dest_path.toStdString());
     }
     else
     {
-      std::cerr << "Failed to copy model to: " << dest_path.toStdString() << std::endl;
+      spdlog::error("Failed to copy model to: {}", dest_path.toStdString());
     }
   }
 
@@ -1246,16 +1240,16 @@ void AIPluginManager::RegisterModelManually()
     model.training_images_count = labeled_count;
     model.notes = notes;
 
-    std::cout << "=== Registering Model ===" << std::endl;
-    std::cout << "Name: " << name.toStdString() << std::endl;
-    std::cout << "Path: " << path.toStdString() << std::endl;
-    std::cout << "Training images: " << labeled_count << std::endl;
-    std::cout << "Notes: " << notes.toStdString() << std::endl;
+    spdlog::info("=== Registering Model ===");
+    spdlog::info("Name: {}", name.toStdString());
+    spdlog::info("Path: {}", path.toStdString());
+    spdlog::info("Training images: {}", labeled_count);
+    spdlog::info("Notes: {}", notes.toStdString());
 
     // Add to config
     project_config_->AddModelVersion(model);
-    std::cout << "Total models after adding: " << project_config_->GetModelVersions().size()
-              << std::endl;
+    spdlog::info("Total models after adding: {}",
+                 project_config_->GetModelVersions().size());
 
     // Automatically update plugin settings to use this newly registered model for detection
     PluginConfig plugin = project_config_->GetPluginConfig();

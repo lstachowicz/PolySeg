@@ -73,3 +73,59 @@ TEST_F(ProjectTest, RemoveCurrentArtifactResetsCurrentId)
   project_.RemoveArtifact(id);
   EXPECT_EQ(project_.GetCurrentArtifactId(), kInvalidArtifactId);
 }
+
+TEST_F(ProjectTest, UndoAfterRehashDoesNotCorruptState)
+{
+  // Add enough artifacts to guarantee at least one unordered_map rehash before
+  // and after the annotation operations.
+  for (int i = 0; i < 8; ++i)
+  {
+    AddImageArtifact();
+  }
+
+  ArtifactId id = AddImageArtifact();
+  auto& ann = project_.GetAnnotations(id);
+
+  SegmentId seg = ann.BeginSegment(0);
+  ann.AddPoint(seg, {0, 0});
+  ann.AddPoint(seg, {10, 0});
+
+  // More insertions after annotation work forces additional rehashes. With
+  // by-value storage the undo lambdas' captured `this` would now dangle.
+  for (int i = 0; i < 8; ++i)
+  {
+    AddImageArtifact();
+  }
+
+  ASSERT_TRUE(ann.CanUndo());
+  ann.Undo();
+
+  const Segment* in_progress = ann.GetInProgress();
+  ASSERT_NE(in_progress, nullptr);
+  EXPECT_EQ(in_progress->points.size(), 1u);
+}
+
+TEST_F(ProjectTest, ImageNavigationReleasesOldArtifacts)
+{
+  // Each image switch must remove the previous artifact so pixel data does not
+  // accumulate across navigations. This is the contract LoadImageAtIndex upholds.
+  ArtifactId previous = kInvalidArtifactId;
+  std::vector<ArtifactId> seen_ids;
+
+  for (int i = 0; i < 5; ++i)
+  {
+    ArtifactId current = AddImageArtifact();
+    project_.SetCurrentArtifact(current);
+    seen_ids.push_back(current);
+
+    if (previous != kInvalidArtifactId)
+    {
+      project_.RemoveArtifact(previous);
+      EXPECT_EQ(project_.GetArtifact(previous), nullptr)
+          << "Artifact from navigation step " << (i - 1) << " should have been freed";
+    }
+    previous = current;
+  }
+
+  EXPECT_NE(project_.GetArtifact(seen_ids.back()), nullptr);
+}

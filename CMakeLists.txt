@@ -171,6 +171,16 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+# Fetch spdlog for structured logging (statically compiled into PolySeg_lib only)
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.15.3
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+
 # Create a library with core functionality (excluding main.cpp for testability)
 set(POLYSEG_LIB_SOURCES ${POLYSEG_SOURCES})
 list(REMOVE_ITEM POLYSEG_LIB_SOURCES src/main.cpp)
@@ -196,6 +206,7 @@ target_link_libraries(PolySeg_lib PUBLIC
     Qt6::Network
     imgproc
     segcore
+    spdlog::spdlog
 )
 
 # Create the main PolySeg executable
@@ -343,3 +354,9 @@ if(UNIX AND NOT ANDROID)
         RUNTIME DESTINATION bin
     )
 endif()
+
+# Install spdlog license for distribution compliance (statically linked)
+install(FILES ${spdlog_SOURCE_DIR}/LICENSE
+    DESTINATION share/doc/PolySeg/licenses
+    RENAME spdlog-LICENSE.txt
+)

@@ -8,7 +8,7 @@ ArtifactId Project::AddArtifact(Artifact artifact)
   ArtifactId id = next_id_++;
   artifact.id = id;
   artifacts_.emplace(id, std::move(artifact));
-  annotations_.emplace(id, AnnotationSet{});
+  annotations_.emplace(id, std::make_unique<AnnotationSet>());
   return id;
 }
 
@@ -30,12 +30,12 @@ const Artifact* Project::GetArtifact(ArtifactId id) const
 
 AnnotationSet& Project::GetAnnotations(ArtifactId id)
 {
-  return annotations_.at(id);
+  return *annotations_.at(id);
 }
 
 const AnnotationSet& Project::GetAnnotations(ArtifactId id) const
 {
-  return annotations_.at(id);
+  return *annotations_.at(id);
 }
 
 ArtifactId Project::GetCurrentArtifactId() const

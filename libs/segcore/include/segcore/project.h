@@ -5,6 +5,7 @@
 #include <segcore/artifact.h>
 #include <segcore/types.h>
 
+#include <memory>
 #include <unordered_map>
 
 namespace segcore
@@ -25,7 +26,7 @@ class Project
   ArtifactId next_id_ = 1;
   ArtifactId current_id_ = kInvalidArtifactId;
   std::unordered_map<ArtifactId, Artifact> artifacts_;
-  std::unordered_map<ArtifactId, AnnotationSet> annotations_;
+  std::unordered_map<ArtifactId, std::unique_ptr<AnnotationSet>> annotations_;
 };
 
 }  // namespace segcore

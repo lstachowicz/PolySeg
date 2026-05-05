@@ -1,13 +1,15 @@
 #include "metadataimporter.h"
 
-#include <QFile>
-#include <QTextStream>
-#include <QStringList>
-#include <QDebug>
-#include <QMessageBox>
 #include <QApplication>
-#include <cmath>
+#include <QFile>
+#include <QMessageBox>
+#include <QStringList>
+#include <QTextStream>
+
 #include <algorithm>
+#include <cmath>
+
+#include "logger.h"
 
 QImage MetadataImporter::ImportMetadataFile(const QString& filepath,
                                           const ImportSettings& settings)
@@ -16,7 +18,7 @@ QImage MetadataImporter::ImportMetadataFile(const QString& filepath,
     int width, height;
     if (!ParseHeader(filepath, width, height))
     {
-        qWarning() << "Failed to parse header for file:" << filepath;
+        spdlog::warn("Failed to parse header for file: {}", filepath.toStdString());
         return QImage();
     }
 
@@ -29,14 +31,14 @@ bool MetadataImporter::ParseHeader(const QString& filepath, int& width, int& hei
     QFile file(filepath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qWarning() << "Cannot open file:" << filepath;
+        spdlog::warn("Cannot open file: {}", filepath.toStdString());
         return false;
     }
 
     QTextStream stream(&file);
     if (stream.atEnd())
     {
-        qWarning() << "Empty file:" << filepath;
+        spdlog::warn("Empty file: {}", filepath.toStdString());
         return false;
     }
 
@@ -67,7 +69,7 @@ QImage MetadataImporter::ProcessDataStream(const QString& filepath,
     QFile file(filepath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qWarning() << "Cannot open file for data processing:" << filepath;
+        spdlog::warn("Cannot open file for data processing: {}", filepath.toStdString());
         return QImage();
     }
 
@@ -93,7 +95,7 @@ QImage MetadataImporter::ProcessDataStream(const QString& filepath,
             settings.crop_start_x >= settings.crop_end_x ||
             settings.crop_start_y >= settings.crop_end_y)
         {
-            qWarning() << "Invalid crop boundaries";
+            spdlog::warn("Invalid crop boundaries");
             return QImage();
         }
 
@@ -115,15 +117,14 @@ QImage MetadataImporter::ProcessDataStream(const QString& filepath,
         QString line = stream.readLine().trimmed();
         if (line.isEmpty())
         {
-            qWarning() << "Empty line found at row:" << current_row;
+            spdlog::warn("Empty line found at row: {}", current_row);
             return QImage();
         }
 
         QStringList values = line.split(' ', Qt::SkipEmptyParts);
         if (values.size() != width)
         {
-            qWarning() << "Row" << current_row << "has" << values.size()
-                      << "values, expected" << width;
+            spdlog::warn("Row {} has {} values, expected {}", current_row, values.size(), width);
             return QImage();
         }
 
@@ -146,8 +147,8 @@ QImage MetadataImporter::ProcessDataStream(const QString& filepath,
                     double value = values[col].toDouble(&ok);
                     if (!ok)
                     {
-                        qWarning() << "Invalid numeric value at row" << current_row
-                                  << "col" << col << ":" << values[col];
+                        spdlog::warn("Invalid numeric value at row {} col {}: {}", current_row, col,
+                                     values[col].toStdString());
                         return QImage();
                     }
 
@@ -174,7 +175,7 @@ QImage MetadataImporter::ProcessDataStream(const QString& filepath,
 
     if (current_row != height)
     {
-        qWarning() << "Expected" << height << "data rows, found" << current_row;
+        spdlog::warn("Expected {} data rows, found {}", height, current_row);
         return QImage();
     }
 
