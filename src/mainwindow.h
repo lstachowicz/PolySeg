@@ -129,5 +129,6 @@ class MainWindow : public QMainWindow
 
   segcore::Project project_core_;
   segcore::ArtifactId current_artifact_id_ = segcore::kInvalidArtifactId;
+
 };
 #endif  // MAINWINDOW_H

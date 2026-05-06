@@ -599,7 +599,6 @@ void MainWindow::LoadImageAtIndex(int index)
     return;
   }
 
-  AutoSaveCurrentImage();
 
   // Save clipboard from current image before switching (deep copy)
   std::optional<segcore::Segment> clipboard_backup;
