@@ -1,5 +1,6 @@
 #include <segcore/normalized_format_serializer.h>
 
+#include <cmath>
 #include <iomanip>
 #include <sstream>
 
@@ -9,7 +10,7 @@ namespace segcore
 std::string SegmentsToNormalizedFormat(const std::vector<Segment>& segs, int w, int h)
 {
   std::ostringstream out;
-  out << std::fixed << std::setprecision(3);
+  out << std::fixed << std::setprecision(6);
   for (const auto& seg : segs)
   {
     if (seg.points.size() < 3)
@@ -58,7 +59,7 @@ std::vector<Segment> NormalizedFormatToSegments(const std::string& text, int w, 
       {
         double nx = std::stod(tokens[i]);
         double ny = std::stod(tokens[i + 1]);
-        seg.points.push_back({static_cast<int>(nx * w), static_cast<int>(ny * h)});
+        seg.points.push_back({static_cast<int>(std::round(nx * w)), static_cast<int>(std::round(ny * h))});
       }
       result.push_back(std::move(seg));
     }
