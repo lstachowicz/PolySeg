@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include <QApplication>
+#include <QSignalSpy>
 #include <QTest>
 
 #include "polygoncanvas.h"
@@ -120,8 +121,52 @@ TEST_F(PolygonCanvasTest, KeyPressCtrlZCallsUndo)
 {
   canvas_->SetAnnotationSet(&mock_);
   canvas_->setFocus();
+  ON_CALL(mock_, CanUndo()).WillByDefault(testing::Return(true));
   EXPECT_CALL(mock_, Undo());
   QTest::keyClick(canvas_, Qt::Key_Z, Qt::ControlModifier);
+}
+
+TEST_F(PolygonCanvasTest, UndoSkippedWhenCanUndoFalse)
+{
+  canvas_->SetAnnotationSet(&mock_);
+  canvas_->setFocus();
+  ON_CALL(mock_, CanUndo()).WillByDefault(testing::Return(false));
+  EXPECT_CALL(mock_, Undo()).Times(0);
+  QTest::keyClick(canvas_, Qt::Key_Z, Qt::ControlModifier);
+}
+
+TEST_F(PolygonCanvasTest, RedoSkippedWhenCanRedoFalse)
+{
+  canvas_->SetAnnotationSet(&mock_);
+  canvas_->setFocus();
+  ON_CALL(mock_, CanRedo()).WillByDefault(testing::Return(false));
+  EXPECT_CALL(mock_, Redo()).Times(0);
+  QTest::keyClick(canvas_, Qt::Key_Y, Qt::ControlModifier);
+}
+
+TEST_F(PolygonCanvasTest, PasteEmitsPolygonsChangedOnSuccess)
+{
+  canvas_->SetAnnotationSet(&mock_);
+  canvas_->setFocus();
+  ON_CALL(mock_, PasteSegment()).WillByDefault(testing::Return(segcore::SegmentId{7}));
+  ON_CALL(mock_, GetSegments()).WillByDefault(testing::ReturnRef(empty_segments_));
+
+  QSignalSpy spy(canvas_, &PolygonCanvas::PolygonsChanged);
+  QTest::keyClick(canvas_, Qt::Key_V, Qt::ControlModifier);
+
+  EXPECT_EQ(spy.count(), 1);
+}
+
+TEST_F(PolygonCanvasTest, PasteDoesNotEmitPolygonsChangedWhenClipboardEmpty)
+{
+  canvas_->SetAnnotationSet(&mock_);
+  canvas_->setFocus();
+  ON_CALL(mock_, PasteSegment()).WillByDefault(testing::Return(segcore::kInvalidSegmentId));
+
+  QSignalSpy spy(canvas_, &PolygonCanvas::PolygonsChanged);
+  QTest::keyClick(canvas_, Qt::Key_V, Qt::ControlModifier);
+
+  EXPECT_EQ(spy.count(), 0);
 }
 
 TEST_F(PolygonCanvasTest, KeyPressDeleteCallsDeleteSegment)

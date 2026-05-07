@@ -505,7 +505,7 @@ int PolygonCanvas::GetAnnotationCount() const
 
 void PolygonCanvas::Undo()
 {
-  if (annotation_set_ == nullptr) return;
+  if (annotation_set_ == nullptr || !annotation_set_->CanUndo()) return;
   annotation_set_->Undo();
   emit PolygonsChanged();
   repaint();
@@ -513,7 +513,7 @@ void PolygonCanvas::Undo()
 
 void PolygonCanvas::Redo()
 {
-  if (annotation_set_ == nullptr) return;
+  if (annotation_set_ == nullptr || !annotation_set_->CanRedo()) return;
   annotation_set_->Redo();
   emit PolygonsChanged();
   repaint();
@@ -543,8 +543,8 @@ void PolygonCanvas::PastePolygon()
 {
   if (annotation_set_ == nullptr) return;
   segcore::SegmentId pasted_id = annotation_set_->PasteSegment();
-  if (pasted_id != segcore::kInvalidSegmentId)
-    annotation_set_->SelectSegment(pasted_id);
+  if (pasted_id == segcore::kInvalidSegmentId) return;
+  annotation_set_->SelectSegment(pasted_id);
   emit PolygonsChanged();
   repaint();
 }
